@@ -1,0 +1,7 @@
+name: TwentyOnePlugin
+version: @version@
+main: twentyoneplugin.twentyoneplugin.TOP
+api-version: 1.16
+
+commands:
+  21:
