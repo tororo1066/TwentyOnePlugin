@@ -30,6 +30,11 @@ object Inventory {
         val inv = Bukkit.createInventory(null,54, Component.text("§0§l§kaaa§5§l2§0§l§kaa§6§l1§0§l§kaaa"))
         inv.setItem(8,createhead(enemy))
         inv.setItem(27,createhead(p))
+        val item = ItemStack(Material.BOOKSHELF)
+        for (loop in 1..11){
+            setnbt(item,"$loop",1)
+        }
+        inv.setItem(26,item)
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
         return inv
     }
@@ -139,13 +144,12 @@ object Inventory {
             Bukkit.getPlayer(p)?.sendmsg("§cあなたはもうカードを引くことはできません！")
             return false
         }
-        val yama = yamahudacheck(p) ?:return false
         if (per(10.0)){
             if (checkplayersp(p) != -1){
                 inv.setItem(checkplayersp(p), drawspcard())
             }
         }
-        val card = drawcard(yama,false)
+        val card = drawcard(p,false)
         inv.setItem(checkplayercard(p), card)
         eninv.setItem(checkenemycard(p),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
@@ -154,7 +158,7 @@ object Inventory {
         return true
     }
 
-    fun checkplayercard(p : UUID): Int {
+    fun checkplayercard(p : UUID): Int {//調べる対象を選択
         val inv = getinv(p) //28~35
         for (i in 28..35){
             if (inv.getItem(i) != null)continue
@@ -165,8 +169,8 @@ object Inventory {
 
     }
 
-    fun checkenemycard(p : UUID): Int {
-        val inv = getinv(getdata(p).enemy) //7~0
+    fun checkenemycard(p : UUID): Int {//エネミーじゃないほうを選択
+        val inv = getinv(p) //7~0
         for (i in 7 downTo 0){
             if (inv.getItem(i) != null)continue
             return i
@@ -184,7 +188,7 @@ object Inventory {
         return count
     }
 
-    fun checkplayersp(p : UUID): Int {
+    fun checkplayersp(p : UUID): Int {//調べる対象を選択
         val inv = getinv(p) //36~44
         for (i in 36..44){
             if (inv.getItem(i) != null)continue
@@ -216,10 +220,19 @@ object Inventory {
         return ItemStack(Material.AIR)
     }
 
-    fun drawcard(cardlist : ArrayList<Int>, invisible : Boolean) : ItemStack{
-        val cardnum = cardlist.random()
+    fun drawcard(p : UUID, invisible : Boolean) : ItemStack? {
+        val cardnum = yamahudacheck(p)?.random()?:return null
         val item = createitem(if (invisible) Material.BOOK else Material.PAPER,cardnum.toString(), cardcsm[cardnum-1])
         setnbt(item,"cardnum",cardnum)
+        setnbt(getinv(p).getItem(26)!!,"$cardnum",0)
+        setnbt(getinv(getdata(p).enemy).getItem(26)!!,"$cardnum",0)
+        return item
+    }
+
+    fun nullcarddis(item : ItemStack): ItemStack {
+        val meta = item.itemMeta
+        meta.displayName(Component.text("？"))
+        item.itemMeta = meta
         return item
     }
 

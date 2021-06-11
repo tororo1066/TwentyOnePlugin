@@ -1,12 +1,15 @@
 package twentyoneplugin.twentyoneplugin
 
+import net.kyori.adventure.text.Component
 import twentyoneplugin.twentyoneplugin.*
 import org.bukkit.Bukkit
+import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
+import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.Util.gamestart
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
@@ -85,6 +88,7 @@ class TOP : JavaPlugin() {
                 datamap[sender.uniqueId] = PlayerData()
                 savetips[sender.uniqueId] = args[1].toDouble()
                 canjoin.add(sender.uniqueId)
+                Bukkit.broadcast(Component.text("へやがあいたああああああああ"), Server.BROADCAST_CHANNEL_USERS)
             }
 
             "join"->{
@@ -110,6 +114,25 @@ class TOP : JavaPlugin() {
                 datamap[sender.uniqueId] = PlayerData()
                 datamap[sender.uniqueId]?.dataset(sender,p,savetips[p.uniqueId]!!)
                 gamestart(p.uniqueId,sender.uniqueId)
+                return true
+            }
+
+            "open"->{
+                if (args.size != 1){
+                    sender.sendmsg("§4引数が不正です")
+                    return true
+                }
+                if (!datamap.containsKey(sender.uniqueId)){
+                    sender.sendmsg("§4ゲームに参加していません")
+                    return true
+                }
+                sender.openInventory(getinv(sender.uniqueId))
+                return true
+            }
+
+            "remove"->{
+                datamap.clear()
+                canjoin.clear()
                 return true
             }
 

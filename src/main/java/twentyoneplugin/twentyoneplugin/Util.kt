@@ -17,9 +17,12 @@ import twentyoneplugin.twentyoneplugin.Inventory.drawspcard
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.intrangeitem
+import twentyoneplugin.twentyoneplugin.Inventory.nullcarddis
 import twentyoneplugin.twentyoneplugin.Inventory.replaceaction
 import twentyoneplugin.twentyoneplugin.Inventory.setallplayer
 import twentyoneplugin.twentyoneplugin.Inventory.yamahudacheck
+import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.TOP.Companion.spcards
 import java.util.*
 
 object Util {
@@ -69,21 +72,42 @@ object Util {
         val joininv = getinv(joinplayer)
         getplayer(startplayer).openInventory(startinv)
         getplayer(joinplayer).openInventory(joininv)
-
         Thread{
             startinv.setItem(checkplayersp(startplayer), drawspcard())
             joininv.setItem(checkplayersp(joinplayer), drawspcard())
             allplaysound(Sound.BLOCK_ANVIL_PLACE,startplayer)
-            Thread.sleep(10000)
-            var card = drawcard(yamahudacheck(startplayer)?: return@Thread,true)
-            startinv.setItem(28, card)
-            joininv.setItem(7, card)
-            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
-            Thread.sleep(10000)
-            card = drawcard(yamahudacheck(startplayer)?:return@Thread,false)
+            Thread.sleep(1000)
+
+            var card = drawcard(startplayer,true)?:return@Thread
             startinv.setItem(checkplayercard(startplayer), card)
-            joininv.setItem(checkenemycard(startplayer), card)
+            nullcarddis(card)
+            joininv.setItem(checkenemycard(joinplayer), card)
             allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
+
+            Thread.sleep(1000)
+
+            card = drawcard(joinplayer,true)?:return@Thread
+            joininv.setItem(checkplayercard(joinplayer), card)
+            nullcarddis(card)
+            startinv.setItem(checkenemycard(startplayer), card)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
+
+
+            Thread.sleep(1000)
+
+            card = drawcard(startplayer,false)?:return@Thread
+            startinv.setItem(checkplayercard(startplayer), card)
+            joininv.setItem(checkenemycard(joinplayer), card)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
+
+            Thread.sleep(1000)
+
+            card = drawcard(joinplayer,false)?:return@Thread
+            joininv.setItem(checkplayercard(joinplayer), card)
+            startinv.setItem(checkenemycard(startplayer), card)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
+
+
             timecount(startplayer)
             fillaction(startplayer)
         }.start()
@@ -98,6 +122,7 @@ object Util {
         if (inv.getItem(17)?.amount!! == 0){
             turnchange(getdata(p).enemy)
         }
+        Thread.sleep(1000)
         inv.setItem(17, ItemStack(Material.CLOCK,inv.getItem(17)?.amount!!.minus(1)))
         eninv.setItem(17, ItemStack(Material.CLOCK,inv.getItem(17)?.amount!!.minus(1)))
         allplaysound(Sound.BLOCK_STONE_BUTTON_CLICK_ON,p)
