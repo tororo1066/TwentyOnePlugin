@@ -107,27 +107,21 @@ object Util {
             startinv.setItem(checkenemycard(startplayer), card)
             allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
 
-
-            timecount(startplayer)
-            fillaction(startplayer)
+            fillaction(startinv)
         }.start()
 
 
     }
 
-    private fun timecount(p: UUID){ //どちらでも可
-        if (datamap[p] == null)return
+    fun timecount(p: UUID, time : Int) : Boolean{ //どちらでも可
         val inv = getinv(p)
         val eninv = getinv(getdata(p).enemy)
-        if (inv.getItem(17)?.amount!! == 0){
-            turnchange(getdata(p).enemy)
-        }
-        Thread.sleep(1000)
-        inv.setItem(17, ItemStack(Material.CLOCK,inv.getItem(17)?.amount!!.minus(1)))
-        eninv.setItem(17, ItemStack(Material.CLOCK,inv.getItem(17)?.amount!!.minus(1)))
+        if (inv.getItem(17) == null)return false
+        inv.setItem(17, ItemStack(Material.CLOCK,time))
+        eninv.setItem(17, ItemStack(Material.CLOCK,time))
         allplaysound(Sound.BLOCK_STONE_BUTTON_CLICK_ON,p)
-        timecount(p)
-        return
+        if (inv.getItem(17)?.amount == 1)return false
+        return true
     }
 
     fun turnchange(p: UUID){ //ターンをチェンジする対象を指定
@@ -135,10 +129,10 @@ object Util {
             endtwoturn(p)
             return
         }
-        getdata(p).through = true
+        getdata(getdata(p).enemy).through = true
         replaceaction(getdata(p).enemy)
-        fillaction(p)
-        setallplayer(p,17, ItemStack(Material.CLOCK, TOP.plugin.config.getInt("clocktime")))
+        fillaction(getinv(p))
+        setallplayer(p,17, ItemStack(Material.CLOCK, plugin.config.getInt("clocktime")))
         return
 
     }
@@ -158,8 +152,13 @@ object Util {
     }
 
     fun win(p : UUID){ //指定したプレイヤーを勝利にする
-        val inv = Bukkit.createInventory(null,54, Component.text("§0§l§kaaa§5§l2§0§l§kaa§6§l1§0§l§kaaa"))
+        val inv = Bukkit.createInventory(null,54, Component.text("Result"))
         intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6${getplayer(p).name}の勝利！", mutableListOf(Component.text("§e${getplayer(p).name}は"))),0..53)
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            getplayer(p).openInventory(inv)
+            getplayer(getdata(p).enemy).openInventory(inv)
+        })
+        Thread.sleep(3000)
         getdata(p).gamecount+=1
         getdata(getdata(p).enemy).gamecount+=1
         if (getdata(p).gamecount == 2)return

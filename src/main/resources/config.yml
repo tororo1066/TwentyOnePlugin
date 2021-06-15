@@ -16,3 +16,12 @@ cardcsm:
 sp:
   1: #1~11ドロー系
     enable: true
+    csm: 0
+  2: #
+    enable: false
+    csm: 0
+
+
+
+tipcoin: 10
+round: 3

@@ -69,3 +69,10 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         jvmTarget = "1.8"
     }
 }
+
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+}

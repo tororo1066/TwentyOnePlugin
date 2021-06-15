@@ -1,7 +1,6 @@
 package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
-import twentyoneplugin.twentyoneplugin.*
 import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.command.Command
@@ -18,9 +17,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-
-
-
 class PlayerData{
     lateinit var enemy : UUID
     var tip : Double = 0.0
@@ -29,6 +25,7 @@ class PlayerData{
     var through : Boolean = false
     var bjnumber = 21
     var gamecount = 0
+    var action = ""
 
 
     fun dataset(player : Player, enemyplayer : Player,tipdouble : Double){
@@ -41,7 +38,7 @@ class PlayerData{
 class TOP : JavaPlugin() {
 
     private val savetips = HashMap<UUID,Double>()
-    private val canjoin = ArrayList<UUID>()
+
 
     override fun onEnable() {
         saveDefaultConfig()
@@ -50,7 +47,9 @@ class TOP : JavaPlugin() {
         plugin = this
         var int = 1
         while (config.isSet("sp.$int")){
-            if (config.getBoolean("sp.$int.enable")) spcards.add(int)
+            if (config.getBoolean("sp.$int.enable")){
+                spcards[int] = config.getInt("sp.$int.csm")
+            }
             int++
         }
         for (l in config.getIntegerList("cardcsm")){
@@ -59,10 +58,12 @@ class TOP : JavaPlugin() {
     }
 
     companion object{
-        const val prefix = "§f[§0§l21§f]§r"
+        const val prefix = "§4§l[21]§r"
         val datamap = HashMap<UUID,PlayerData>()
-        val spcards = ArrayList<Int>()
+        val cansp = HashMap<UUID,Boolean>()
+        val spcards = HashMap<Int,Int>()
         val cardcsm = ArrayList<Int>()
+        val canjoin = ArrayList<UUID>()
         lateinit var plugin : TOP
     }
 
@@ -88,7 +89,7 @@ class TOP : JavaPlugin() {
                 datamap[sender.uniqueId] = PlayerData()
                 savetips[sender.uniqueId] = args[1].toDouble()
                 canjoin.add(sender.uniqueId)
-                Bukkit.broadcast(Component.text("へやがあいたああああああああ"), Server.BROADCAST_CHANNEL_USERS)
+                TwentyOne(sender.uniqueId).start()
             }
 
             "join"->{
@@ -113,7 +114,6 @@ class TOP : JavaPlugin() {
                 datamap[p.uniqueId]?.dataset(p,sender,savetips[p.uniqueId]!!)
                 datamap[sender.uniqueId] = PlayerData()
                 datamap[sender.uniqueId]?.dataset(sender,p,savetips[p.uniqueId]!!)
-                gamestart(p.uniqueId,sender.uniqueId)
                 return true
             }
 
