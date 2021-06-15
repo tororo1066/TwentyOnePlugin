@@ -38,8 +38,8 @@ object Inventory {
         }
         inv.setItem(18,item)
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
         return inv
     }
     //cccccccch
@@ -159,7 +159,6 @@ object Inventory {
         eninv.setItem(checkenemycard(getdata(p).enemy),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
         getdata(p).through = false
-        turnchange(getdata(p).enemy)
         return true
     }
 
@@ -290,16 +289,16 @@ object Inventory {
     }
 
     fun betchange(p: UUID, bet : Int, tip : Int){//変える側
-        getinv(p).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
-        getinv(getdata(p).enemy).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
-        setnbt(getinv(p).getItem(26)!!,"bet",bet)
-        setnbt(getinv(p).getItem(26)!!,"tip",tip)
+        getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
+        getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
+        setnbt(getinv(p).getItem(9)!!,"bet",bet)
+        setnbt(getinv(p).getItem(9)!!,"tip",tip)
         setnbt(getinv(getdata(p).enemy).getItem(26)!!,"bet",bet)
         setnbt(getinv(getdata(p).enemy).getItem(26)!!,"tip",tip)
         return
     }
 
-    fun getbet(p : UUID) : Pair<Int,Int>{
-        return Pair(getinv(p).getItem(26)!!.itemMeta.displayName.split("/")[0].toInt(),getinv(p).getItem(26)!!.itemMeta.displayName.split("/")[2].toInt())
+    fun getbet(p : UUID) : Pair<Int,Int>{//取得する側のuuid
+        return Pair(getinv(p).getItem(9)!!.itemMeta.displayName.split("/")[0].toInt(),getinv(p).getItem(26)!!.itemMeta.displayName.split("/")[2].toInt())
     }
 }

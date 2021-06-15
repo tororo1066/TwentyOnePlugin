@@ -2,6 +2,7 @@ package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Server
 import org.bukkit.Sound
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
@@ -22,12 +23,12 @@ class TwentyOne(private val player : UUID) : Thread(){
         for (i in 59 downTo 0){
             if (!canjoin.contains(player))break
             if (i == 0){
-                Bukkit.broadcast(Component.text("§l${getplayer(player).name}§aの§521§aは人が集まらなかったので中止しました"))
+                Bukkit.broadcast(Component.text("§l${getplayer(player).name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
                 VaultManager(plugin).deposit(player, getdata(player).tip * plugin.config.getInt("tipcoin"))
                 return
             }
             if (i % 10 == 0) Bukkit.broadcast(Component.text("§l${getplayer(player).name}§aが§5§l21§aを募集中...残り${i}秒\n" +
-                    "§f/21 join ${getplayer(player).name} §4最低必須金額 ${getdata(player).tip * plugin.config.getInt("tipcoin")}"))
+                    "§f/21 join ${getplayer(player).name} §4最低必須金額 ${getdata(player).tip * plugin.config.getInt("tipcoin")}"),Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
 
@@ -88,11 +89,18 @@ class TwentyOne(private val player : UUID) : Thread(){
             while (!getdata(startplayer).through || !getdata(joinplayer).through){
                 for (i in plugin.config.getInt("clocktime")*20 downTo 0){
                     if (getdata(first).action != ""){
-                        if (getdata(first).action == "spuse") {
-                            break
-                        }else{
-                            getdata(first).action = ""
-                            break
+                        when(getdata(first).action){
+                            "spuse"->break
+                            "through"->{
+                                getdata(first).through = true
+                                getdata(first).action = ""
+                                break
+                            }
+                            "draw"->{
+                                getdata(first).through = false
+                                getdata(first).action = ""
+                                break
+                            }
                         }
 
                     }
