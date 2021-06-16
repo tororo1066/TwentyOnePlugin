@@ -6,12 +6,16 @@ import org.bukkit.Server
 import org.bukkit.Sound
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
+import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.TOP.Companion.canjoin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.datamap
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.Util.drow
+import twentyoneplugin.twentyoneplugin.Util.endtwoturn
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getplayer
 import twentyoneplugin.twentyoneplugin.Util.timecount
+import twentyoneplugin.twentyoneplugin.Util.win
 import java.util.*
 import kotlin.random.Random
 
@@ -106,7 +110,9 @@ class TwentyOne(private val player : UUID) : Thread(){
                     }
                     sleep(50)
                     if (i == 0){
-
+                        getdata(first).through = true
+                        getdata(first).action = ""
+                        break
                     }
                     if (i % 20 == 0){
                         timecount(first,i / 20)
@@ -117,12 +123,14 @@ class TwentyOne(private val player : UUID) : Thread(){
                     getdata(first).action = ""
                     continue
                 }
-                if (first == player) getdata(player).enemy else player
+                first = if (first == player) getdata(player).enemy else player
                 fillaction(getinv(first))
 
             }
 
-
+            if (endtwoturn(player)?: drow(player) == true) win(player) else win(getdata(player).enemy)
+            getdata(player).inv = invsetup(player, getdata(player).enemy, getdata(player).tipcoin)
+            getdata(getdata(player).enemy).inv = invsetup(getdata(player).enemy, player, getdata(getdata(player).enemy).tipcoin)
 
 
         }

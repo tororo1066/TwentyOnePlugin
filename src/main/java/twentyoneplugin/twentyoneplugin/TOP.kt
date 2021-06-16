@@ -10,7 +10,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
-import twentyoneplugin.twentyoneplugin.Util.gamestart
+import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
 import java.util.*
 import kotlin.collections.ArrayList
@@ -20,18 +20,18 @@ import kotlin.collections.HashMap
 class PlayerData{
     lateinit var enemy : UUID
     var tip : Double = 0.0
+    var tipcoin = plugin.config.getInt("tipcoin")
     var bet = 0
     lateinit var inv : Inventory
     var through : Boolean = false
     var bjnumber = 21
-    var gamecount = 0
     var action = ""
 
 
     fun dataset(player : Player, enemyplayer : Player,tipdouble : Double){
         enemy = enemyplayer.uniqueId
         tip = tipdouble
-        inv = invsetup(player.uniqueId,enemyplayer.uniqueId)
+        inv = invsetup(player.uniqueId,enemyplayer.uniqueId,plugin.config.getInt("tipcoin"))
     }
 }
 
@@ -89,6 +89,8 @@ class TOP : JavaPlugin() {
                 datamap[sender.uniqueId] = PlayerData()
                 savetips[sender.uniqueId] = args[1].toDouble()
                 canjoin.add(sender.uniqueId)
+                Bukkit.broadcast(Component.text("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
+                        "§f/21 join ${sender.name} §4最低必須金額 ${Util.getdata(sender.uniqueId).tip * plugin.config.getInt("tipcoin")}"), Server.BROADCAST_CHANNEL_USERS)
                 TwentyOne(sender.uniqueId).start()
             }
 

@@ -11,7 +11,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
 import twentyoneplugin.twentyoneplugin.TOP.Companion.cardcsm
-import twentyoneplugin.twentyoneplugin.TOP.Companion.datamap
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.spcards
 import twentyoneplugin.twentyoneplugin.Util.allplaysound
@@ -20,7 +19,6 @@ import twentyoneplugin.twentyoneplugin.Util.getplayer
 import twentyoneplugin.twentyoneplugin.Util.per
 import twentyoneplugin.twentyoneplugin.Util.playsound
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
-import twentyoneplugin.twentyoneplugin.Util.turnchange
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random
@@ -28,7 +26,7 @@ import kotlin.random.nextInt
 
 object Inventory {
 
-    fun invsetup(p : UUID, enemy : UUID): Inventory {
+    fun invsetup(p : UUID, enemy : UUID, tip: Int): Inventory {
         val inv = Bukkit.createInventory(null,54, Component.text("21table"))
         inv.setItem(8,createhead(enemy))
         inv.setItem(27,createhead(p))
@@ -38,8 +36,10 @@ object Inventory {
         }
         inv.setItem(18,item)
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e0/10枚"))))
+        getdata(p).bet = 1
+        getdata(getdata(p).enemy).bet = 1
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${tip}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${tip}枚"))))
         return inv
     }
     //cccccccch

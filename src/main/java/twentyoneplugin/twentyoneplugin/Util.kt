@@ -124,49 +124,39 @@ object Util {
         return true
     }
 
-    fun turnchange(p: UUID){ //ターンをチェンジする対象を指定
-        if (getdata(p).through && getdata(getdata(p).enemy).through){
-            endtwoturn(p)
-            return
-        }
-        getdata(getdata(p).enemy).through = true
-        replaceaction(getdata(p).enemy)
-        fillaction(getinv(p))
-        setallplayer(p,17, ItemStack(Material.CLOCK, plugin.config.getInt("clocktime")))
-        return
 
-    }
-
-    fun endtwoturn(p : UUID){ //どちらでも可
+    fun endtwoturn(p : UUID): Boolean? { //どちらでも可 pの勝利はtrue、敗北はfalse、drowはnull
         val pcount = countcard(p)
         val enemycount = countcard(getdata(p).enemy)
-        if (pcount == enemycount) drow(p)
+        if (pcount == enemycount) return null
         if (pcount > getdata(p).bjnumber && enemycount > getdata(p).bjnumber)
-            if (pcount > enemycount) win(getdata(p).enemy) else win(p)
-        if (pcount > enemycount){
-            if (pcount < getdata(p).bjnumber) win(p) else win(getdata(p).enemy)
+            return pcount <= enemycount
+        return if (pcount > enemycount){
+            pcount < getdata(p).bjnumber
         }else{
-            if (enemycount < getdata(p).bjnumber) win(getdata(p).enemy) else win(p)
+            enemycount >= getdata(p).bjnumber
         }
-        return
     }
 
     fun win(p : UUID){ //指定したプレイヤーを勝利にする
-        val inv = Bukkit.createInventory(null,54, Component.text("Result"))
-        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6${getplayer(p).name}の勝利！", mutableListOf(Component.text("§e${getplayer(p).name}は"))),0..53)
+        val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
+        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6§l${getplayer(p).name}の勝利！", mutableListOf(Component.text("§e${getplayer(p).name}は"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {
             getplayer(p).openInventory(inv)
             getplayer(getdata(p).enemy).openInventory(inv)
         })
         Thread.sleep(3000)
-        getdata(p).gamecount+=1
-        getdata(getdata(p).enemy).gamecount+=1
-        if (getdata(p).gamecount == 2)return
-        gamestart(p, getdata(p).enemy)
+        return
     }
 
     fun drow(p: UUID){
-
+        val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
+        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§l引き分け", mutableListOf(Component.text("§e${getplayer(p).name}は"))),0..53)
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            getplayer(p).openInventory(inv)
+            getplayer(getdata(p).enemy).openInventory(inv)
+        })
+        Thread.sleep(3000)
     }
 
 
