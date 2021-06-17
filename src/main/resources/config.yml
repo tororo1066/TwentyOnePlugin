@@ -1,3 +1,10 @@
+mysql:
+  host: localhost
+  user: root
+  pass: pass
+  port: 3306
+  db: 21
+
 clocktime: 30
 
 cardcsm:

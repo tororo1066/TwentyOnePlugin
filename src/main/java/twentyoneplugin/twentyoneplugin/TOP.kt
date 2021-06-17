@@ -60,7 +60,6 @@ class TOP : JavaPlugin() {
     companion object{
         const val prefix = "§4§l[21]§r"
         val datamap = HashMap<UUID,PlayerData>()
-        val cansp = HashMap<UUID,Boolean>()
         val spcards = HashMap<Int,Int>()
         val cardcsm = ArrayList<Int>()
         val canjoin = ArrayList<UUID>()
@@ -113,8 +112,9 @@ class TOP : JavaPlugin() {
                     return true
                 }
                 canjoin.remove(p.uniqueId)
-                datamap[p.uniqueId]?.dataset(p,sender,savetips[p.uniqueId]!!)
+
                 datamap[sender.uniqueId] = PlayerData()
+                datamap[p.uniqueId]?.dataset(p,sender,savetips[p.uniqueId]!!)
                 datamap[sender.uniqueId]?.dataset(sender,p,savetips[p.uniqueId]!!)
                 return true
             }

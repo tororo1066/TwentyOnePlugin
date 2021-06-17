@@ -13,6 +13,7 @@ import org.bukkit.persistence.PersistentDataType
 import twentyoneplugin.twentyoneplugin.TOP.Companion.cardcsm
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.spcards
+import twentyoneplugin.twentyoneplugin.Util.allplayersend
 import twentyoneplugin.twentyoneplugin.Util.allplaysound
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getplayer
@@ -37,9 +38,9 @@ object Inventory {
         inv.setItem(18,item)
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
         getdata(p).bet = 1
-        getdata(getdata(p).enemy).bet = 1
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${tip}枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${tip}枚"))))
+        getdata(enemy).bet = 1
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(enemy).tipcoin}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(p).tipcoin}枚"))))
         return inv
     }
     //cccccccch
@@ -227,6 +228,8 @@ object Inventory {
     }
 
     fun spuse(p: UUID, item: ItemStack){
+        replaceaction(getinv(p))
+        getdata(p).action = "spuse"
         Bukkit.getScheduler().runTask(plugin, Runnable {
             getplayer(p).closeInventory()
             getplayer(getdata(p).enemy).closeInventory()
@@ -234,17 +237,31 @@ object Inventory {
         })
         if (getplayer(p).inventory.itemInMainHand.type != Material.AIR) getplayer(p).location.world.dropItemNaturally(getplayer(p).location, getplayer(p).inventory.itemInMainHand)
         if (getplayer(getdata(p).enemy).inventory.itemInMainHand.type != Material.AIR) getplayer(getdata(p).enemy).location.world.dropItemNaturally(getplayer(getdata(p).enemy).location, getplayer(getdata(p).enemy).inventory.itemInMainHand)
-        getplayer(p).inventory.setItem(EquipmentSlot.CHEST,item)
+        getplayer(p).inventory.setItemInMainHand(item)
         getplayer(getdata(p).enemy).inventory.setItemInMainHand(item)
         getplayer(p).damage(999999.0)
         getplayer(getdata(p).enemy).damage(999999.0)
+        for (l in item.lore()){
+            getplayer(p).sendMessage(item.lore()!![l])
+            getplayer(getdata(p).enemy).sendMessage(item.lore()!![l])
+        }
+        
+        Thread.sleep(2000)
+
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            getplayer(p).openInventory(getinv(p))
+            getplayer(getdata(p).enemy).openInventory(getinv(getdata(p).enemy))
+            return@Runnable
+        })
 
         when(item.itemMeta.persistentDataContainer[NamespacedKey(plugin,"sp"), PersistentDataType.INTEGER]){
             1->{
                 val inv = getinv(p)
                 val drawint = item.itemMeta.persistentDataContainer[NamespacedKey(plugin,"spdraw"), PersistentDataType.INTEGER]!!
                 if (inv.getItem(18)!!.itemMeta.persistentDataContainer[NamespacedKey(plugin,"$drawint"), PersistentDataType.INTEGER]!! == 1){
-
+                    drawcard(p,drawint)
+                }else{
+                    allplayersend(p,"${drawint}は山札にないため、除外された")
                 }
             }
 
@@ -252,6 +269,8 @@ object Inventory {
 
             }
         }
+        fillaction(getinv(p))
+        return
     }
 
     fun drawcard(p : UUID, invisible : Boolean) : ItemStack? {
@@ -263,6 +282,14 @@ object Inventory {
         return item
     }
 
+    fun drawcard(p : UUID, card : Int) : ItemStack? {
+        val item = createitem(Material.PAPER,card.toString(), cardcsm[card-1])
+        setnbt(item,"cardnum",card)
+        setnbt(getinv(p).getItem(18)!!,"$card",0)
+        setnbt(getinv(getdata(p).enemy).getItem(18)!!,"$card",0)
+        return item
+    }
+
     fun nullcarddis(item : ItemStack): ItemStack {
         val meta = item.itemMeta
         meta.displayName(Component.text("§l？"))
@@ -270,8 +297,7 @@ object Inventory {
         return item
     }
 
-    fun replaceaction(p : UUID){
-        val inv = getinv(p)
+    fun replaceaction(inv: Inventory){
         fillair(inv,52..53)
         return
     }
@@ -291,14 +317,7 @@ object Inventory {
     fun betchange(p: UUID, bet : Int, tip : Int){//変える側
         getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
         getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
-        setnbt(getinv(p).getItem(9)!!,"bet",bet)
-        setnbt(getinv(p).getItem(9)!!,"tip",tip)
-        setnbt(getinv(getdata(p).enemy).getItem(26)!!,"bet",bet)
-        setnbt(getinv(getdata(p).enemy).getItem(26)!!,"tip",tip)
         return
     }
 
-    fun getbet(p : UUID) : Pair<Int,Int>{//取得する側のuuid
-        return Pair(getinv(p).getItem(9)!!.itemMeta.displayName.split("/")[0].toInt(),getinv(p).getItem(26)!!.itemMeta.displayName.split("/")[2].toInt())
-    }
 }

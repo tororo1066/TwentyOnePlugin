@@ -5,15 +5,20 @@ import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.Sound
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
+import twentyoneplugin.twentyoneplugin.Inventory.fillair
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
+import twentyoneplugin.twentyoneplugin.Inventory.replaceaction
 import twentyoneplugin.twentyoneplugin.TOP.Companion.canjoin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.datamap
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.Util.allplayersend
 import twentyoneplugin.twentyoneplugin.Util.drow
 import twentyoneplugin.twentyoneplugin.Util.endtwoturn
+import twentyoneplugin.twentyoneplugin.Util.gamelatersetting
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getplayer
+import twentyoneplugin.twentyoneplugin.Util.sendmsg
 import twentyoneplugin.twentyoneplugin.Util.timecount
 import twentyoneplugin.twentyoneplugin.Util.win
 import java.util.*
@@ -23,7 +28,6 @@ class TwentyOne(private val player : UUID) : Thread(){
 
 
     override fun run() {
-        plugin.logger.info("testttt")
         for (i in 59 downTo 0){
             if (!canjoin.contains(player))break
             if (i == 0){
@@ -120,19 +124,37 @@ class TwentyOne(private val player : UUID) : Thread(){
 
                 }
                 if (getdata(first).action == "spuse"){
+                    sleep(5000)
                     getdata(first).action = ""
                     continue
                 }
+                replaceaction(getinv(first))
                 first = if (first == player) getdata(player).enemy else player
                 fillaction(getinv(first))
 
             }
+            val gameend = endtwoturn(player)
+            if (gameend?: drow(player) == true) win(player) else win(getdata(player).enemy)
+            gamelatersetting(player,gameend)
 
-            if (endtwoturn(player)?: drow(player) == true) win(player) else win(getdata(player).enemy)
             getdata(player).inv = invsetup(player, getdata(player).enemy, getdata(player).tipcoin)
             getdata(getdata(player).enemy).inv = invsetup(getdata(player).enemy, player, getdata(getdata(player).enemy).tipcoin)
 
 
         }
+        allplayersend(player,"===============結果===============")
+        allplayersend(player,"${getplayer(player).name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"${getplayer(getdata(player).enemy).name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"===============結果===============")
+
+        val vault = VaultManager(plugin)
+        vault.withdraw(player, getdata(player).tipcoin * getdata(player).tip)
+        vault.withdraw(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
+
+        val mysql = MySQLManager(plugin,"save21log")
+        mysql.execute("INSERT INTO 21 (start, join, tip, sfirstcoin, startlastcoin, joinlastcoin) VALUES " +
+                "('${getplayer(player).name}', '${getplayer(getdata(player).enemy).name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        mysql.close()
+
     }
 }

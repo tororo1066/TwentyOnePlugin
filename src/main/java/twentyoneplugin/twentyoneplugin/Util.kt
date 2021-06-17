@@ -34,6 +34,12 @@ object Util {
         return
     }
 
+    fun allplayersend(p : UUID, s : String){
+        getplayer(p).sendMessage(s)
+        getplayer(getdata(p).enemy).sendMessage(s)
+        return
+    }
+
     fun per(i : Double): Boolean {
         return Math.random() <= i/100
     }
@@ -67,51 +73,6 @@ object Util {
 
 
 
-    fun gamestart(startplayer : UUID,joinplayer : UUID){
-        val startinv = getinv(startplayer)
-        val joininv = getinv(joinplayer)
-        getplayer(startplayer).openInventory(startinv)
-        getplayer(joinplayer).openInventory(joininv)
-        Thread{
-            startinv.setItem(checkplayersp(startplayer), drawspcard())
-            joininv.setItem(checkplayersp(joinplayer), drawspcard())
-            allplaysound(Sound.BLOCK_ANVIL_PLACE,startplayer)
-            Thread.sleep(1000)
-
-            var card = drawcard(startplayer,true)?:return@Thread
-            startinv.setItem(checkplayercard(startplayer), card)
-            nullcarddis(card)
-            joininv.setItem(checkenemycard(joinplayer), card)
-            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
-
-            Thread.sleep(1000)
-
-            card = drawcard(joinplayer,true)?:return@Thread
-            joininv.setItem(checkplayercard(joinplayer), card)
-            nullcarddis(card)
-            startinv.setItem(checkenemycard(startplayer), card)
-            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
-
-
-            Thread.sleep(1000)
-
-            card = drawcard(startplayer,false)?:return@Thread
-            startinv.setItem(checkplayercard(startplayer), card)
-            joininv.setItem(checkenemycard(joinplayer), card)
-            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
-
-            Thread.sleep(1000)
-
-            card = drawcard(joinplayer,false)?:return@Thread
-            joininv.setItem(checkplayercard(joinplayer), card)
-            startinv.setItem(checkenemycard(startplayer), card)
-            allplaysound(Sound.ITEM_BOOK_PAGE_TURN,startplayer)
-
-            fillaction(startinv)
-        }.start()
-
-
-    }
 
     fun timecount(p: UUID, time : Int) : Boolean{ //どちらでも可
         val inv = getinv(p)
@@ -145,7 +106,7 @@ object Util {
             getplayer(p).openInventory(inv)
             getplayer(getdata(p).enemy).openInventory(inv)
         })
-        Thread.sleep(3000)
+        Thread.sleep(5000)
         return
     }
 
@@ -156,7 +117,33 @@ object Util {
             getplayer(p).openInventory(inv)
             getplayer(getdata(p).enemy).openInventory(inv)
         })
-        Thread.sleep(3000)
+        Thread.sleep(5000)
+    }
+
+    fun gamelatersetting(p : UUID, battle : Boolean?): Boolean {//trueだとpの勝利、falseだとenemyの勝利、nullでdraw
+        getdata(p).through = false
+        getdata(getdata(p).enemy).through = false
+        if (battle?:return true){
+            return if (getdata(getdata(p).enemy).tipcoin - getdata(getdata(p).enemy).bet < 0){
+                getdata(getdata(p).enemy).tipcoin = 0
+                getdata(p).tipcoin += getdata(getdata(p).enemy).bet
+                false
+            }else{
+                getdata(getdata(p).enemy).tipcoin -= getdata(getdata(p).enemy).bet
+                getdata(p).tipcoin += getdata(getdata(p).enemy).bet
+                true
+            }
+        }else{
+            return if (getdata(p).tipcoin - getdata(p).bet < 0){
+                getdata(p).tipcoin = 0
+                getdata(getdata(p).enemy).tipcoin += getdata(p).bet
+                false
+            }else{
+                getdata(p).tipcoin -= getdata(p).bet
+                getdata(getdata(p).enemy).tipcoin += getdata(p).bet
+                true
+            }
+        }
     }
 
 
