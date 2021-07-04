@@ -1,28 +1,35 @@
 package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.Sound
+import org.bukkit.inventory.ItemStack
+import twentyoneplugin.twentyoneplugin.Inventory.checkplayersp
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
-import twentyoneplugin.twentyoneplugin.Inventory.fillair
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.Inventory.replaceaction
 import twentyoneplugin.twentyoneplugin.TOP.Companion.canjoin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.datamap
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.TOP.Companion.vault
 import twentyoneplugin.twentyoneplugin.Util.allplayersend
-import twentyoneplugin.twentyoneplugin.Util.drow
+import twentyoneplugin.twentyoneplugin.Util.allplaysound
+import twentyoneplugin.twentyoneplugin.Util.draw
 import twentyoneplugin.twentyoneplugin.Util.endtwoturn
 import twentyoneplugin.twentyoneplugin.Util.gamelatersetting
 import twentyoneplugin.twentyoneplugin.Util.getdata
+import twentyoneplugin.twentyoneplugin.Util.getenemy
 import twentyoneplugin.twentyoneplugin.Util.getplayer
-import twentyoneplugin.twentyoneplugin.Util.sendmsg
+import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.timecount
 import twentyoneplugin.twentyoneplugin.Util.win
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.random.Random
+import kotlin.random.nextInt
 
 class TwentyOne(private val player : UUID) : Thread(){
 
@@ -31,15 +38,18 @@ class TwentyOne(private val player : UUID) : Thread(){
         for (i in 59 downTo 0){
             if (!canjoin.contains(player))break
             if (i == 0){
-                Bukkit.broadcast(Component.text("§l${getplayer(player).name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
-                VaultManager(plugin).deposit(player, getdata(player).tip * plugin.config.getInt("tipcoin"))
+                Bukkit.broadcast(Component.text("§l${getplayer(player)?.name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
+                datamap.remove(player)
                 return
             }
-            if (i % 10 == 0) Bukkit.broadcast(Component.text("§l${getplayer(player).name}§aが§5§l21§aを募集中...残り${i}秒\n" +
-                    "§f/21 join ${getplayer(player).name} §4最低必須金額 ${getdata(player).tip * plugin.config.getInt("tipcoin")}"),Server.BROADCAST_CHANNEL_USERS)
+            if (i % 10 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
+                    "§f/21 join ${getplayer(player)?.name} §4最低必須金額 ${getdata(player).tip * plugin.config.getInt("tipcoin")}","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
+                ,Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
 
+        vault.withdraw(player, getdata(player).tip * plugin.config.getInt("tipcoin"))
+        vault.withdraw(getdata(player).enemy, getdata(player).tip * plugin.config.getInt("tipcoin"))
 
 
         for (loops in 1..plugin.config.getInt("round")){
@@ -48,11 +58,11 @@ class TwentyOne(private val player : UUID) : Thread(){
             val startinv = getinv(startplayer)
             val joininv = getinv(joinplayer)
             Bukkit.getScheduler().runTask(plugin, Runnable {
-                getplayer(player).openInventory(startinv)
-                getplayer(getdata(player).enemy).openInventory(joininv)
+                getplayer(player)?.openInventory(startinv)
+                getplayer(getdata(player).enemy)?.openInventory(joininv)
             })
-            startinv.setItem(Inventory.checkplayersp(startplayer), Inventory.drawspcard())
-            joininv.setItem(Inventory.checkplayersp(joinplayer), Inventory.drawspcard())
+            startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
+            joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(player))
             Util.allplaysound(Sound.BLOCK_ANVIL_PLACE, startplayer)
             sleep(1000)
 
@@ -85,13 +95,17 @@ class TwentyOne(private val player : UUID) : Thread(){
             startinv.setItem(Inventory.checkenemycard(startplayer), card)
             Util.allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
 
-            var first = player
-            first = if (loops == 1){
-                if (Random.nextInt(1) == 1) player else getdata(player).enemy
+            var firstturn = player
+            var first: UUID
+
+
+            firstturn = if (loops == 1){
+                if (Random.nextInt(1..2) == 1) player else getdata(player).enemy
             }else{
-                if (first == player) getdata(player).enemy else player
+                if (firstturn == player) getdata(player).enemy else player
             }
-            fillaction(getinv(first))
+            first = firstturn
+            fillaction(getinv(firstturn))
 
 
             while (!getdata(startplayer).through || !getdata(joinplayer).through){
@@ -126,6 +140,7 @@ class TwentyOne(private val player : UUID) : Thread(){
                 if (getdata(first).action == "spuse"){
                     sleep(5000)
                     getdata(first).action = ""
+                    fillaction(getinv(first))
                     continue
                 }
                 replaceaction(getinv(first))
@@ -133,28 +148,65 @@ class TwentyOne(private val player : UUID) : Thread(){
                 fillaction(getinv(first))
 
             }
+
+            sleep(500)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            sleep(500)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            sleep(500)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            sleep(1000)
+
+
             val gameend = endtwoturn(player)
-            if (gameend?: drow(player) == true) win(player) else win(getdata(player).enemy)
+            if (gameend == null)draw(player) else if (gameend == true) win(player) else win(getenemy(player))
+
             gamelatersetting(player,gameend)
 
-            getdata(player).inv = invsetup(player, getdata(player).enemy, getdata(player).tipcoin)
-            getdata(getdata(player).enemy).inv = invsetup(getdata(player).enemy, player, getdata(getdata(player).enemy).tipcoin)
+            if (plugin.config.getInt("round") != loops){
+                val spsave = ArrayList<ItemStack>()
+                val spsave2 = ArrayList<ItemStack>()
+                var wi = 36
+                while (getinv(player).getItem(wi) != null){
+                    spsave.add(getinv(player).getItem(wi)!!)
+                    wi++
+                }
+                wi = 36
+                while (getinv(getenemy(player)).getItem(wi) != null){
+                    spsave2.add(getinv(getenemy(player)).getItem(wi)!!)
+                    wi++
+                }
+                getdata(player).inv = invsetup(player, getdata(player).enemy)
+                getdata(getdata(player).enemy).inv = invsetup(getdata(player).enemy, player)
+                for (item in spsave){
+                    getinv(player).setItem(checkplayersp(player),item)
+                }
+
+                for (item in spsave2){
+                    getinv(getenemy(player)).setItem(checkplayersp(getenemy(player)),item)
+                }
+
+            }
+
 
 
         }
-        allplayersend(player,"===============結果===============")
-        allplayersend(player,"${getplayer(player).name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
-        allplayersend(player,"${getplayer(getdata(player).enemy).name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
-        allplayersend(player,"===============結果===============")
+        getplayer(player)?.closeInventory()
+        getplayer(getenemy(player))?.closeInventory()
+        allplayersend(player,"§5===============結果===============")
+        allplayersend(player,"§e${getplayer(player)?.name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"§e${getplayer(getdata(player).enemy)?.name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"§5===============結果===============")
 
-        val vault = VaultManager(plugin)
         vault.withdraw(player, getdata(player).tipcoin * getdata(player).tip)
         vault.withdraw(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
 
         val mysql = MySQLManager(plugin,"save21log")
-        mysql.execute("INSERT INTO 21 (start, join, tip, sfirstcoin, startlastcoin, joinlastcoin) VALUES " +
-                "('${getplayer(player).name}', '${getplayer(getdata(player).enemy).name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        mysql.execute("INSERT INTO 21 (start, join, tip, firstcoin, startlastcoin, joinlastcoin) VALUES " +
+                "('${getplayer(player)?.name}', '${getplayer(getdata(player).enemy)?.name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
-
+        datamap.remove(player)
+        datamap.remove(getenemy(player))
+        return
     }
 }

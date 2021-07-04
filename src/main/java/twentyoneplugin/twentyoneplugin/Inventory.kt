@@ -5,7 +5,6 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
@@ -16,18 +15,18 @@ import twentyoneplugin.twentyoneplugin.TOP.Companion.spcards
 import twentyoneplugin.twentyoneplugin.Util.allplayersend
 import twentyoneplugin.twentyoneplugin.Util.allplaysound
 import twentyoneplugin.twentyoneplugin.Util.getdata
+import twentyoneplugin.twentyoneplugin.Util.getenemy
 import twentyoneplugin.twentyoneplugin.Util.getplayer
 import twentyoneplugin.twentyoneplugin.Util.per
 import twentyoneplugin.twentyoneplugin.Util.playsound
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.random.Random
 import kotlin.random.nextInt
 
 object Inventory {
 
-    fun invsetup(p : UUID, enemy : UUID, tip: Int): Inventory {
+    fun invsetup(p : UUID, enemy : UUID): Inventory {
         val inv = Bukkit.createInventory(null,54, Component.text("21table"))
         inv.setItem(8,createhead(enemy))
         inv.setItem(27,createhead(p))
@@ -37,10 +36,14 @@ object Inventory {
         }
         inv.setItem(18,item)
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
+        getdata(p).bjnumber = 21
+        getdata(enemy).bjnumber = 21
         getdata(p).bet = 1
         getdata(enemy).bet = 1
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(enemy).tipcoin}枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(p).tipcoin}枚"))))
+
+
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy)?.name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(enemy).tipcoin}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(p).tipcoin}枚"))))
         return inv
     }
     //cccccccch
@@ -118,6 +121,7 @@ object Inventory {
     }
 
     fun checkitem(inv : Inventory, slot : Int, name : String): Boolean {
+        inv.getItem(1)
         if (inv.getItem(slot)?.itemMeta?.displayName() == Component.text(name))return true
         return false
     }
@@ -127,6 +131,10 @@ object Inventory {
         meta.persistentDataContainer.set(NamespacedKey(plugin,namespacedKey), PersistentDataType.INTEGER,num)
         item.itemMeta = meta
         return item
+    }
+
+    fun getnbt(item : ItemStack, namespacedKey: String): Int {
+        return item.itemMeta.persistentDataContainer[NamespacedKey(plugin,namespacedKey), PersistentDataType.INTEGER]!!
     }
 
     fun yamahudacheck(p : UUID) : ArrayList<Int>?{
@@ -149,13 +157,21 @@ object Inventory {
             Bukkit.getPlayer(p)?.sendmsg("§cあなたはもうカードを引くことはできません！")
             return false
         }
+        if (countcard(p) > getdata(p).bjnumber){
+            p.sendmsg("§cあなたはすでにバーストしています！")
+            return false
+        }
         if (per(10.0)){
             if (checkplayersp(p) != -1){
-                inv.setItem(checkplayersp(p), drawspcard())
-                getplayer(p).playsound(Sound.BLOCK_ANVIL_PLACE)
+                inv.setItem(checkplayersp(p), drawspcard(p))
+                getplayer(p)?.playsound(Sound.BLOCK_ANVIL_PLACE)
             }
         }
         val card = drawcard(p,false)
+        if (card == null){
+            getdata(p).action = "through"
+            return false
+        }
         inv.setItem(checkplayercard(p), card)
         eninv.setItem(checkenemycard(getdata(p).enemy),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
@@ -169,9 +185,8 @@ object Inventory {
             if (inv.getItem(i) != null)continue
             return i
         }
-        getplayer(p).sendmsg("§cあなたはもうカードを引くことはできません！")
+        getplayer(p)?.sendmsg("§cあなたはもうカードを引くことはできません！")
         return -1
-
     }
 
     fun checkenemycard(p : UUID): Int {//エネミーじゃないほうを選択
@@ -181,8 +196,26 @@ object Inventory {
             return i
         }
         return -1
-
     }
+
+    fun checkplayerspput(p : UUID): Int {//調べる対象を選択
+        val inv = getinv(p)
+        for (i in 20..24){
+            if (inv.getItem(i) != null)continue
+            return i
+        }
+        return -1
+    }
+
+    fun checkenemyspput(p : UUID): Int {//調べる対象を選択
+        val inv = getinv(p)
+        for (i in 15 downTo 11){
+            if (inv.getItem(i) != null)continue
+            return i
+        }
+        return -1
+    }
+
     fun countcard(p: UUID): Int {
         val inv = getinv(p) //28~35
         var count = 0
@@ -199,77 +232,849 @@ object Inventory {
             if (inv.getItem(i) != null)continue
             return i
         }
-        getplayer(p).sendmsg("§cあなたはもうspカードを引くことはできません！")
         return -1
+    }
+
+    fun checkplayerspfornbt(p : UUID): ArrayList<Int> {//調べる対象を選択
+        val inv = getinv(p) //36~44
+        val itemlist = ArrayList<Int>()
+        for (i in 36..44){
+            if (inv.getItem(i) != null)continue
+            itemlist.add(getnbt(inv.getItem(i)!!,"sp"))
+        }
+        return itemlist
     }
 
     fun getinv(p : UUID): Inventory {
         return getdata(p).inv
     }
 
-    fun drawspcard(): ItemStack {
-        Thread.sleep(1000)
+    fun drawspcard(p: UUID): ItemStack {
+
+        allplaysound(Sound.ENTITY_PLAYER_LEVELUP,p)
+        allplayersend(p,"§a${getplayer(p)?.name}はspカードを引いた")
 
         when(val sprandom = spcards.keys.random()){
             1->{
                 val random = Random.nextInt(1..11)
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ドロー$random", mutableListOf(Component.text("山札に残っている場合のみ、${random}のカードを引く。")) ,spcards[sprandom]!!)
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ドロー$random", mutableListOf(
+                    Component.text("§e山札に残っている場合のみ、${random}のカードを引く。")) ,
+                    plugin.config.getIntegerList("sp.1.drawcsm")[random-1])
                 setnbt(item,"sp",1)
                 setnbt(item,"spdraw",random)
                 return item
             }
 
             2->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6リムーブ",mutableListOf(
+                    Component.text("§e相手が最後にひいたカードを山札に戻す。"),
+                    Component.text("§e相手の残りのカードが一枚だと使えない。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",2)
+                return item
+            }
 
+            3->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ", mutableListOf(
+                    Component.text("§e相手が最後に場に置いたSPカードを取り除く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",3)
+                return item
+            }
+
+            4->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ+", mutableListOf(
+                    Component.text("§e相手が場に置いた全てのSPカードを取り除く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",4)
+                return item
+            }
+
+            5->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6パーフェクトドロー", mutableListOf(
+                    Component.text("§e山札の中から、一番良い数字のカードを引く。"),
+                    Component.text("§e適切なカードが見つからなければ引かない。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",5)
+                setnbt(item,"betup",5)
+                return item
+            }
+
+            6->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6パーフェクトドロー+", mutableListOf(
+                    Component.text("§e山札の中から、一番良い数字のカードを引く。"),
+                    Component.text("§e適切なカードが見つからなければ引かない。"),
+                    Component.text("§eさらに場に置かれている間、相手の賭け数を5つ増やす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",6)
+                setnbt(item,"betup",5)
+                return item
+            }
+
+            7->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6アルティメットドロー", mutableListOf(
+                    Component.text("§e山札の中から、一番良い数字のカードを引く。"),
+                    Component.text("§e適切なカードが見つからなければ引かない。"),
+                    Component.text("§eさらに、spカードを2枚引く。")),
+
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",7)
+                return item
+            }
+
+            8->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ1", mutableListOf(
+                    Component.text("§eSPカードを1枚引く。"),
+                    Component.text("§eさらに場に置かれている間、相手の賭け数を1つ増やす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",8)
+                setnbt(item,"betup",1)
+                return item
+            }
+
+            9->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ2", mutableListOf(
+                    Component.text("§eSPカードを1枚引く。"),
+                    Component.text("§eさらに場に置かれている間、相手の賭け数を2つ増やす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",9)
+                setnbt(item,"betup",2)
+                return item
+            }
+
+            10->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ2+", mutableListOf(
+                    Component.text("§e相手の最後にひいたカードを山札に戻す。"),
+                    Component.text("§eさらに場に置かれている間、相手の賭け数を2つ増やす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",10)
+                setnbt(item,"betup",2)
+                return item
+            }
+
+            11->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6シールド", mutableListOf(
+                    Component.text("§e場に置かれている間、自分の賭け数を1つ減らす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",11)
+                setnbt(item,"betup",-1)
+                return item
+            }
+
+            12->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6シールド+", mutableListOf(
+                    Component.text("§e場に置かれている間、自分の賭け数を2つ減らす。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",12)
+                setnbt(item,"betup",-1)
+                return item
+            }
+
+            13->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ", mutableListOf(
+                    Component.text("§e自分のSPカードをランダムで2枚捨てる。"),
+                    Component.text("§eさらにSPカードを3枚引く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",13)
+                return item
+            }
+
+            14->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ+", mutableListOf(
+                    Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
+                    Component.text("§eさらにSPカードを4枚引く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",14)
+                return item
+            }
+
+            15->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ++", mutableListOf(
+                    Component.text("§e相手の場に出てるspカードを全て消す。"),
+                    Component.text("§eさらに、場に置かれている間相手のspカードの仕様を封じる。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",15)
+                return item
+            }
+
+            16->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ラブ・ユア・エネミー", mutableListOf(
+                    Component.text("§e相手は1枚カードを引く。"),
+                    Component.text("§eそのカードの数字は、相手にとって一番良い数字が選ばれる。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",16)
+                return item
+            }
+
+            17->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ハーヴェスト", mutableListOf(
+                    Component.text("§e場に置かれている間、SPカードを使う度にSPカードを1枚引く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",17)
+                return item
+            }
+
+            18->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6エクスチェンジ", mutableListOf(
+                    Component.text("§e両プレイヤーがそれぞれ最後に引いたカードを交換する。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",18)
+                return item
+            }
+
+            19->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール17", mutableListOf(
+                    Component.text("§e場に置かれている間、勝利条件を17にする。"),
+                    Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",19)
+                setnbt(item,"goal",17)
+                return item
+            }
+
+            20->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール24", mutableListOf(
+                    Component.text("§e場に置かれている間、勝利条件を24にする。"),
+                    Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",19)
+                setnbt(item,"goal",24)
+                return item
+            }
+
+            21->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール27", mutableListOf(
+                    Component.text("§e場に置かれている間、勝利条件を27にする。"),
+                    Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",19)
+                setnbt(item,"goal",27)
+                return item
+            }
+
+
+            22->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6リターン",mutableListOf(
+                    Component.text("§e自分が最後にひいたカードを山札に戻す。"),
+                    Component.text("§e自分の残りのカードが一枚だと使えない。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",21)
+                return item
             }
 
         }
         return ItemStack(Material.AIR)
     }
 
-    fun spuse(p: UUID, item: ItemStack){
-        replaceaction(getinv(p))
-        getdata(p).action = "spuse"
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            getplayer(p).closeInventory()
-            getplayer(getdata(p).enemy).closeInventory()
-            return@Runnable
-        })
-        if (getplayer(p).inventory.itemInMainHand.type != Material.AIR) getplayer(p).location.world.dropItemNaturally(getplayer(p).location, getplayer(p).inventory.itemInMainHand)
-        if (getplayer(getdata(p).enemy).inventory.itemInMainHand.type != Material.AIR) getplayer(getdata(p).enemy).location.world.dropItemNaturally(getplayer(getdata(p).enemy).location, getplayer(getdata(p).enemy).inventory.itemInMainHand)
-        getplayer(p).inventory.setItemInMainHand(item)
-        getplayer(getdata(p).enemy).inventory.setItemInMainHand(item)
-        getplayer(p).damage(999999.0)
-        getplayer(getdata(p).enemy).damage(999999.0)
-        for (l in item.lore()){
-            getplayer(p).sendMessage(item.lore()!![l])
-            getplayer(getdata(p).enemy).sendMessage(item.lore()!![l])
-        }
-        
-        Thread.sleep(2000)
 
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            getplayer(p).openInventory(getinv(p))
-            getplayer(getdata(p).enemy).openInventory(getinv(getdata(p).enemy))
-            return@Runnable
-        })
 
-        when(item.itemMeta.persistentDataContainer[NamespacedKey(plugin,"sp"), PersistentDataType.INTEGER]){
+    fun spuse(p: UUID, item: ItemStack, slot: Int){
+
+        when(getnbt(item,"sp")){
+
             1->{
-                val inv = getinv(p)
-                val drawint = item.itemMeta.persistentDataContainer[NamespacedKey(plugin,"spdraw"), PersistentDataType.INTEGER]!!
-                if (inv.getItem(18)!!.itemMeta.persistentDataContainer[NamespacedKey(plugin,"$drawint"), PersistentDataType.INTEGER]!! == 1){
-                    drawcard(p,drawint)
-                }else{
-                    allplayersend(p,"${drawint}は山札にないため、除外された")
+                if (checkplayercard(p) == -1){
+                    p.sendmsg("§cあなたはこれ以上カードは引けません！！")
+                    return
                 }
             }
 
             2->{
+                if (checkenemycard(p) == 7){
+                    p.sendmsg("§c相手のカードは1枚しかありません！")
+                    return
+                }
+            }
+
+            3->{
+                if (checkenemyspput(p) == 15){
+                    p.sendmsg("§c相手はspカードを場に出していません！")
+                    return
+                }
+            }
+
+            5->{
+                if (yamahudacheck(p) == null){
+                    p.sendmsg("§c山札が空です！")
+                    return
+                }
+                if (checkplayercard(p) == -1){
+                    p.sendmsg("§cあなたはこれ以上カードは引けません！！")
+                    return
+                }
+            }
+
+            6->{
+                if (yamahudacheck(p) == null){
+                    p.sendmsg("§c山札が空です！")
+                    return
+                }
+                if (checkplayercard(p) == -1){
+                    p.sendmsg("§cあなたはこれ以上カードは引けません！！")
+                    return
+                }
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cもうspカードを場に出すことはできません！")
+                    return
+                }
 
             }
+
+            7->{
+                if (yamahudacheck(p) == null){
+                    p.sendmsg("§c山札が空です！")
+                    return
+                }
+                if (checkplayercard(p) == -1){
+                    p.sendmsg("§cあなたはこれ以上カードは引けません！！")
+                    return
+                }
+            }
+
+            8,9,11,12->{
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cもうspカードを場に出すことはできません！")
+                    return
+                }
+            }
+
+            10->{
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cもうspカードを場に出すことはできません！")
+                    return
+                }
+                if (checkenemycard(p) == 7){
+                    p.sendmsg("§c相手のカードは1枚しかありません！")
+                    return
+                }
+            }
+
+            13->{
+                if (checkplayersp(p) < 39 || checkplayersp(p) == -1){
+                    p.sendmsg("§cspカードが2枚必要です！")
+                    return
+                }
+            }
+
+            14->{
+                if (checkplayersp(p) < 38 || checkplayersp(p) == -1){
+                    p.sendmsg("§cspカードが3枚必要です！")
+                    return
+                }
+            }
+
+            15->{
+                if (checkenemyspput(p) == 15){
+                    p.sendmsg("§c相手はspカードを場に出していません！")
+                    return
+                }
+            }
+
+            16->{
+                if (yamahudacheck(p) == null){
+                    p.sendmsg("§c山札が空です！")
+                    return
+                }
+
+                if (checkenemycard(p) == -1){
+                    p.sendmsg("§c相手はもうカードを引けません！")
+                    return
+                }
+            }
+
+            17->{
+                if (checkplayerspfornbt(p).contains(17)){
+                    p.sendmsg("§すでにハーヴェストが出されています")
+                    return
+                }
+            }
+
+            18->{
+                if (checkplayercard(p) == 28){
+                    p.sendmsg("§cあなたのカードは1枚しかありません！")
+                    return
+                }
+
+                if (checkenemycard(p) == 7){
+                    p.sendmsg("§c相手のカードは1枚しかありません！")
+                    return
+                }
+            }
+
+            19,20,21->{
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cあなたはもうspカードを場に出すことができません！")
+                    return
+                }
+            }
+
+
+            22->{
+                if (checkplayercard(p) == 28){
+                    p.sendmsg("§cあなたのカードは1枚しかありません！")
+                    return
+                }
+            }
+
+
         }
-        fillaction(getinv(p))
+
+        replaceaction(getinv(p))
+        getinv(p).clear(slot)
+        getdata(p).action = "spuse"
+        if (getdata(p).harvest) getinv(p).setItem(checkplayersp(p), drawspcard(p))
+
+        getplayer(p)?.closeInventory()
+        getplayer(getenemy(p))?.closeInventory()
+
+        if (getplayer(p)?.inventory?.itemInMainHand?.type != Material.AIR) getplayer(p)?.location?.let {
+            getplayer(p)?.inventory?.itemInMainHand?.let { it1 ->
+                getplayer(p)?.location?.world?.dropItemNaturally(
+                    it, it1
+                )
+            }
+        }
+        if (getplayer(getenemy(p))?.inventory?.itemInMainHand?.type != Material.AIR) getplayer(getenemy(p))?.location?.world?.dropItemNaturally(getplayer(
+            getenemy(p))?.location!!, getplayer(getenemy(p))?.inventory?.itemInMainHand!!)
+        getplayer(p)?.inventory?.setItemInMainHand(item)
+        getplayer(getenemy(p))?.inventory?.setItemInMainHand(item)
+        getplayer(p)?.damage(999999.0)
+        getplayer(getenemy(p))?.damage(999999.0)
+        allplayersend(p,item.itemMeta.displayName)
+        for (l in item.lore!!){
+            allplayersend(p,l)
+        }
+        
+        Thread.sleep(2000)
+
+        getplayer(p)?.openInventory(getinv(p))
+        getplayer(getdata(p).enemy)?.openInventory(getinv(getdata(p).enemy))
+
+        val inv = getinv(p)
+        when(getnbt(item,"sp")){
+            1->{//draw系
+                val drawint = getnbt(item,"spdraw")
+
+                if (getnbt(getinv(p).getItem(18)!!,"$drawint") == 1){
+
+                    val card = drawcard(p,drawint)
+                    inv.setItem(checkplayercard(p),card)
+                    getinv(getdata(p).enemy).setItem(checkenemycard(getdata(p).enemy),card)
+                    allplayersend(p,"§d${getplayer(p)?.name}は${drawint}のカードを引いた")
+                }else{
+                    allplayersend(p,"§b${drawint}は山札にないため、除外された")
+                }
+            }
+
+            2->{//リムーブ
+                val enemyslot = if (checkenemycard(p) == -1) 20 else checkenemycard(p) +1
+                val enemymyslot = if (checkplayercard(getenemy(p)) == -1) 44 else checkplayercard(getenemy(p)) -1
+
+                allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+
+                setnbt(getinv(getenemy(p)).getItem(18)!!,"${getinv(getenemy(p)).getItem(enemymyslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//ここで山札にnbtを戻す
+
+                setnbt(getinv(p).getItem(18)!!,"${getinv(p).getItem(enemyslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//これも
+
+                inv.clear(enemyslot)//アイテム削除
+                getinv(getenemy(p)).clear(enemymyslot)//アイテム(ry
+                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後にひいたカードは山札に戻された")
+
+            }
+
+            3->{//デストロイ
+                val enemyspslot = if (checkenemyspput(p) == -1) 20 else checkenemyspput(p) +1
+                val enemymyspslot = if (checkplayerspput(getenemy(p)) == -1) 11 else checkplayerspput(getenemy(p)) -1
+
+                allplaysound(Sound.ENTITY_GENERIC_EXPLODE,p)
+
+                when(getnbt(inv.getItem(enemyspslot)!!,"sp")){
+                    6,8,9,10->{
+                        getdata(p).bet -= getnbt(inv.getItem(enemyspslot)!!,"betup")
+                        betchange(p)
+                    }
+
+                    11,12->{
+                        getdata(getenemy(p)).bet -= getnbt(inv.getItem(enemyspslot)!!,"betup")
+                        betchange(p)
+                    }
+
+                    19,20,21->{
+                        getdata(p).bjnumber = 21
+                        getdata(getenemy(p)).bjnumber = 21
+                    }
+
+                    17->{
+                        getdata(getenemy(p)).harvest = false
+                    }
+                }
+
+                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後に出したspカードは消えた")
+                inv.clear(enemyspslot)
+                getinv(getenemy(p)).clear(enemymyspslot)
+            }
+
+            4->{//デストロイ+
+                for (i in 20..24){
+                    if (inv.getItem(i) == null)continue
+                    when(getnbt(inv.getItem(i)!!,"sp")){
+                        6,8,9,10->{
+                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        11,12->{
+                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        19,20,21->{
+                            getdata(p).bjnumber = 21
+                            getdata(getenemy(p)).bjnumber = 21
+                        }
+
+                        17->{
+                            getdata(getenemy(p)).harvest = false
+                        }
+                    }
+                    inv.clear(i)
+                }
+
+                for (i in 15 downTo 11){
+                    if (inv.getItem(i) == null)continue
+                    when(getnbt(inv.getItem(i)!!,"sp")){
+                        6,8,9,10->{
+                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        11,12->{
+                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        19,20,21->{
+                            getdata(p).bjnumber = 21
+                            getdata(getenemy(p)).bjnumber = 21
+                        }
+
+                        17->{
+                            getdata(getenemy(p)).harvest = false
+                        }
+                    }
+                    inv.clear(i)
+                }
+
+                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
+            }
+
+            5->{//パーフェクトドロー
+                val count = countcard(p)
+                val yamahuda = yamahudacheck(p)!!
+
+                for (i in getdata(p).bjnumber-count downTo 0){//21-13=8
+                    if (i == 0){
+                        allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                        break
+                    }
+                    if (!yamahuda.contains(i))continue
+                    val card = drawcard(p,i)
+                    inv.setItem(checkplayercard(p), card)
+                    getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
+                    allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    break
+                }
+            }
+
+            6->{//パーフェクトドロー+
+                val count = countcard(p)
+                val yamahuda = yamahudacheck(p)!!
+
+                for (i in getdata(p).bjnumber-count downTo 0){
+                    if (i == 0){
+                        allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                        break
+                    }
+                    if (!yamahuda.contains(i))continue
+                    val card = drawcard(p,i)
+                    inv.setItem(checkplayercard(p), card)
+                    getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
+                    allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    break
+                }
+
+                inv.setItem(checkplayerspput(p),item)
+                getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
+                getdata(getenemy(p)).bet += getnbt(item,"betup")
+                betchange(p)
+            }
+
+            7->{//アルティメットドロー
+                val count = countcard(p)
+                val yamahuda = yamahudacheck(p)!!
+
+                for (i in getdata(p).bjnumber-count downTo 0){
+                    if (i == 0){
+                        allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                        break
+                    }
+                    if (!yamahuda.contains(i))continue
+                    val card = drawcard(p,i)
+                    inv.setItem(checkplayercard(p), card)
+                    getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
+                    allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    break
+                }
+
+                if (checkplayersp(p) == -1){
+                    p.sendmsg("§bspカードはすでに一杯なので受取れませんでした")
+                }else{
+                    if (checkplayersp(p) == 44){
+                        inv.setItem(checkplayersp(p), drawspcard(p))
+                        p.sendmsg("§bspカードの空きが少なかったので一枚しか受取れませんでした")
+                    }else{
+                        inv.setItem(checkplayersp(p), drawspcard(p))
+                        inv.setItem(checkplayersp(p), drawspcard(p))
+                    }
+                }
+
+            }
+
+            8,9->{//ベッドアップ1,2
+                val pslot = if (checkplayerspput(p) == -1) 20 else checkplayerspput(p)
+                val eslot = if (checkenemyspput(getenemy(p)) == -1) 11 else checkenemyspput(getenemy(p))
+
+                if (checkplayersp(p) == -1){
+                    p.sendmsg("§bspカードはすでに一杯なので受取れませんでした")
+                }else{
+                    inv.setItem(checkplayersp(p), drawspcard(p))
+                }
+                inv.setItem(pslot, item.clone())
+                getinv(getenemy(p)).setItem(eslot,item.clone())
+                allplaysound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER,p)
+
+                getdata(getenemy(p)).bet += getnbt(item,"betup")
+                betchange(getenemy(p))
+
+            }
+
+            10->{//ベットアップ2+
+                val enemyslot = if (checkenemycard(p) == -1) 20 else checkenemycard(p) +1
+                val enemymyslot = if (checkplayercard(getenemy(p)) == -1) 44 else checkplayercard(getenemy(p)) -1
+
+                allplaysound(Sound.BLOCK_BEACON_DEACTIVATE,p)
+
+                setnbt(getinv(getenemy(p)).getItem(18)!!,"${getinv(getenemy(p)).getItem(enemymyslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//ここで山札にnbtを戻す
+
+                setnbt(getinv(p).getItem(18)!!,"${getinv(p).getItem(enemyslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//これも
+
+                inv.clear(enemyslot)//アイテム削除
+                getinv(getenemy(p)).clear(enemymyslot)//アイテム(ry
+                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後にひいたカードは山札に戻された")
+
+
+                val pslot = if (checkplayerspput(p) == -1) 20 else checkplayerspput(p)
+                val eslot = if (checkenemyspput(getenemy(p)) == -1) 11 else checkenemyspput(getenemy(p))
+
+                inv.setItem(pslot, item.clone())
+                getinv(getenemy(p)).setItem(eslot,item.clone())
+                allplaysound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER,p)
+
+                getdata(getenemy(p)).bet += getnbt(item,"betup")
+                betchange(getenemy(p))
+
+            }
+
+            11,12->{//シールド,+
+                val pslot = if (checkplayerspput(p) == -1) 20 else checkplayerspput(p)
+                val eslot = if (checkenemyspput(getenemy(p)) == -1) 11 else checkenemyspput(getenemy(p))
+
+                inv.setItem(pslot, item.clone())
+                getinv(getenemy(p)).setItem(eslot,item.clone())
+                allplaysound(Sound.ENTITY_ARROW_HIT_PLAYER,p)
+
+                getdata(p).bet += getnbt(item,"betup")
+                betchange(getenemy(p))
+            }
+
+            13->{//spチェンジ
+                for (i in 1..2){
+                    val delete = if (checkplayersp(p) == -1) 44 else checkplayersp(p)-1
+                    inv.clear(delete)
+                }
+                for (i in 1..4){
+                    if (checkplayersp(p) == -1)break
+                    inv.setItem(checkplayersp(p), drawspcard(p))
+                }
+                allplaysound(Sound.BLOCK_IRON_DOOR_OPEN,p)
+            }
+
+            14->{//spチェンジ+
+                val delete = if (checkplayersp(p) == -1) 44 else checkplayersp(p)-1
+                inv.clear(delete)
+                for (i in 1..5){
+                    if (checkplayersp(p) == -1)break
+                    inv.setItem(checkplayersp(p), drawspcard(p))
+                }
+                allplaysound(Sound.BLOCK_IRON_DOOR_OPEN,p)
+            }
+
+            15->{//デストロイ++
+                for (i in 20..24){
+                    if (inv.getItem(i) == null)continue
+                    when(getnbt(inv.getItem(i)!!,"sp")){
+                        6,8,9,10->{
+                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        11,12->{
+                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        19,20,21->{
+                            getdata(p).bjnumber = 21
+                            getdata(getenemy(p)).bjnumber = 21
+                        }
+
+                        17->{
+                            getdata(getenemy(p)).harvest = false
+                        }
+                    }
+                    inv.clear(i)
+                }
+
+                for (i in 15 downTo 11){
+                    if (inv.getItem(i) == null)continue
+                    when(getnbt(inv.getItem(i)!!,"sp")){
+                        6,8,9,10->{
+                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        11,12->{
+                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
+                            betchange(p)
+                        }
+
+                        19,20,21->{
+                            getdata(p).bjnumber = 21
+                            getdata(getenemy(p)).bjnumber = 21
+                        }
+
+                        17->{
+                            getdata(getenemy(p)).harvest = false
+                        }
+                    }
+                    inv.clear(i)
+                }
+                allplaysound(Sound.ENTITY_GENERIC_EXPLODE,p)
+                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
+
+                getdata(getenemy(p)).spuse = false
+
+            }
+
+            16->{//ラブ・ユア・エネミー
+                val count = countcard(getenemy(p))
+                val yamahuda = yamahudacheck(getenemy(p))!!
+
+                for (i in getdata(getenemy(p)).bjnumber-count downTo 0){//21-13=8
+                    if (i == 0){
+                        allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                        break
+                    }
+                    if (!yamahuda.contains(i))continue
+                    val card = drawcard(getenemy(p),i)
+                    inv.setItem(checkplayercard(getenemy(p)), card)
+                    getinv(p).setItem(checkenemycard(p),card)
+                    allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
+                    allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
+                    break
+                }
+            }
+
+            17->{//ハーヴェスト
+                inv.setItem(checkplayerspput(p),item)
+                getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
+                getdata(p).harvest = true
+                allplaysound(Sound.BLOCK_SLIME_BLOCK_BREAK,p)
+            }
+
+            18->{//エクスチェンジ
+                val enemyslot = if (checkenemycard(p) == -1) 20 else checkenemycard(p) +1
+                val enemymyslot = if (checkplayercard(getenemy(p)) == -1) 44 else checkplayercard(getenemy(p)) -1
+
+                val myslot = if (checkplayercard(p) == -1) 44 else checkplayercard(p) -1
+                val enemysslot = if (checkenemycard(getenemy(p)) == -1) 20 else checkenemycard(getenemy(p)) +1
+
+                val item1 = inv.getItem(myslot)?.clone()
+                val item2 = inv.getItem(enemyslot)?.clone()
+
+                inv.setItem(myslot,item2)
+                inv.setItem(enemyslot,item1)
+
+                getinv(getenemy(p)).setItem(enemymyslot,item1)
+                getinv(getenemy(p)).setItem(enemysslot,item2)
+                allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+                allplayersend(p,"§d最後にひいたカードを入れ替えた")
+            }
+
+            19,20,21->{//ゴール17,24,27  //15..11
+                for (i in 20..24){
+                    if (inv.getItem(i) == null)continue
+                    if (getnbt(inv.getItem(i)!!,"sp") in 19..21){
+                        inv.clear(i)
+                    }
+                }
+
+                for (i in 15 downTo 11){
+                    if (getinv(getenemy(p)).getItem(i) == null)continue
+                    if (getnbt(getinv(getenemy(p)).getItem(i)!!,"sp") in 19..21){
+                        getinv(getenemy(p)).clear(i)
+                    }
+                }
+
+                getdata(p).bjnumber = getnbt(item,"goal")
+                getdata(getenemy(p)).bjnumber = getnbt(item,"goal")
+                inv.setItem(checkplayerspput(p),item)
+                getinv(getenemy(p)).setItem(checkenemyspput(p),item)
+
+                allplaysound(Sound.BLOCK_PISTON_CONTRACT,p)
+                allplayersend(p,"§dゴールが${getnbt(item,"goal")}になった")
+            }
+
+            22->{//リターン
+                val myslot = if (checkplayercard(p) == -1) 44 else checkplayercard(p) -1
+                val enemyslot = if (checkenemycard(getenemy(p)) == -1) 20 else checkenemycard(getenemy(p)) +1
+
+                allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
+
+                setnbt(getinv(getenemy(p)).getItem(18)!!,"${getinv(getenemy(p)).getItem(enemyslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//ここで山札にnbtを戻す
+
+                setnbt(getinv(p).getItem(18)!!,"${getinv(p).getItem(myslot)
+                    ?.let { getnbt(it,"cardnum") }}",1)//これも
+
+                inv.clear(myslot)//アイテム削除
+                getinv(getenemy(p)).clear(enemyslot)//これも
+                allplayersend(p,"§d${getplayer(p)?.name}の最後にひいたカードは山札に戻された")
+            }
+
+
+        }
+
+        tumespcards(p)
+        getdata(getenemy(p)).through = false
+
         return
     }
 
@@ -282,7 +1087,7 @@ object Inventory {
         return item
     }
 
-    fun drawcard(p : UUID, card : Int) : ItemStack? {
+    fun drawcard(p : UUID, card : Int) : ItemStack {
         val item = createitem(Material.PAPER,card.toString(), cardcsm[card-1])
         setnbt(item,"cardnum",card)
         setnbt(getinv(p).getItem(18)!!,"$card",0)
@@ -314,9 +1119,23 @@ object Inventory {
         return
     }
 
-    fun betchange(p: UUID, bet : Int, tip : Int){//変える側
-        getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
-        getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p).name}の賭け数/チップ", mutableListOf(Component.text("§e$bet/$tip"))))
+    fun betchange(p: UUID){//変える側
+        getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
+        getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
+        return
+    }
+
+    fun tumespcards(p : UUID){
+        val itemlist = ArrayList<ItemStack>()
+        for (i in 36..44){
+            if (getinv(p).getItem(i) != null)itemlist.add(getinv(p).getItem(i)!!)
+            getinv(p).clear(i)
+        }
+
+        for (i in itemlist){
+            getinv(p).setItem(checkplayersp(p),i)
+        }
+
         return
     }
 

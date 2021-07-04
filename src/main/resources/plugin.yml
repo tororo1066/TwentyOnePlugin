@@ -5,3 +5,7 @@ api-version: 1.16
 
 commands:
   21:
+
+permissions:
+  21:
+    switch:
