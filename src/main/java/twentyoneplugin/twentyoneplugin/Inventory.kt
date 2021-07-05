@@ -175,6 +175,7 @@ object Inventory {
         inv.setItem(checkplayercard(p), card)
         eninv.setItem(checkenemycard(getdata(p).enemy),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
+        showcardcount(p)
         getdata(p).through = false
         return true
     }
@@ -247,6 +248,19 @@ object Inventory {
 
     fun getinv(p : UUID): Inventory {
         return getdata(p).inv
+    }
+
+    fun showcardcount(p : UUID){
+        getinv(p).getItem(27)!!.itemMeta.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(p)}"))
+        getinv(getenemy(p)).getItem(27)!!.itemMeta.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+            getenemy(p))}"))
+
+        getinv(p).getItem(8)!!.itemMeta.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+            getenemy(p)) - getnbt(getinv(p).getItem(7)!!,"cardnum")} + ?"))
+
+        getinv(getenemy(p)).getItem(8)!!.itemMeta.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(
+            p) - getnbt(getinv(getenemy(p)).getItem(7)!!,"cardnum")} + ?"))
+        return
     }
 
     fun drawspcard(p: UUID): ItemStack {
@@ -382,7 +396,7 @@ object Inventory {
             14->{
                 val item = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ+", mutableListOf(
                     Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
-                    Component.text("§eさらにSPカードを4枚引く。")),
+                    Component.text("§eさらにSPカードを3枚引く。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",14)
                 return item
@@ -550,15 +564,15 @@ object Inventory {
             }
 
             13->{
-                if (checkplayersp(p) < 39 || checkplayersp(p) == -1){
+                if (checkplayersp(p) < 38 || checkplayersp(p) == -1){
                     p.sendmsg("§cspカードが2枚必要です！")
                     return
                 }
             }
 
             14->{
-                if (checkplayersp(p) < 38 || checkplayersp(p) == -1){
-                    p.sendmsg("§cspカードが3枚必要です！")
+                if (checkplayersp(p) < 37 || checkplayersp(p) == -1){
+                    p.sendmsg("§cspカードが1枚必要です！")
                     return
                 }
             }
@@ -717,7 +731,7 @@ object Inventory {
             }
 
             4->{//デストロイ+
-                for (i in 20..24){
+                for (i in 15 downTo 11){
                     if (inv.getItem(i) == null)continue
                     when(getnbt(inv.getItem(i)!!,"sp")){
                         6,8,9,10->{
@@ -742,29 +756,9 @@ object Inventory {
                     inv.clear(i)
                 }
 
-                for (i in 15 downTo 11){
-                    if (inv.getItem(i) == null)continue
-                    when(getnbt(inv.getItem(i)!!,"sp")){
-                        6,8,9,10->{
-                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
-                        }
-
-                        11,12->{
-                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
-                        }
-
-                        19,20,21->{
-                            getdata(p).bjnumber = 21
-                            getdata(getenemy(p)).bjnumber = 21
-                        }
-
-                        17->{
-                            getdata(getenemy(p)).harvest = false
-                        }
-                    }
-                    inv.clear(i)
+                for (i in 20..24){
+                    if (getinv(getenemy(p)).getItem(i) == null)continue
+                    getinv(getenemy(p)).clear(i)
                 }
 
                 allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
@@ -909,7 +903,7 @@ object Inventory {
                     val delete = if (checkplayersp(p) == -1) 44 else checkplayersp(p)-1
                     inv.clear(delete)
                 }
-                for (i in 1..4){
+                for (i in 1..3){
                     if (checkplayersp(p) == -1)break
                     inv.setItem(checkplayersp(p), drawspcard(p))
                 }
@@ -919,7 +913,7 @@ object Inventory {
             14->{//spチェンジ+
                 val delete = if (checkplayersp(p) == -1) 44 else checkplayersp(p)-1
                 inv.clear(delete)
-                for (i in 1..5){
+                for (i in 1..3){
                     if (checkplayersp(p) == -1)break
                     inv.setItem(checkplayersp(p), drawspcard(p))
                 }
@@ -927,31 +921,6 @@ object Inventory {
             }
 
             15->{//デストロイ++
-                for (i in 20..24){
-                    if (inv.getItem(i) == null)continue
-                    when(getnbt(inv.getItem(i)!!,"sp")){
-                        6,8,9,10->{
-                            getdata(p).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
-                        }
-
-                        11,12->{
-                            getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
-                        }
-
-                        19,20,21->{
-                            getdata(p).bjnumber = 21
-                            getdata(getenemy(p)).bjnumber = 21
-                        }
-
-                        17->{
-                            getdata(getenemy(p)).harvest = false
-                        }
-                    }
-                    inv.clear(i)
-                }
-
                 for (i in 15 downTo 11){
                     if (inv.getItem(i) == null)continue
                     when(getnbt(inv.getItem(i)!!,"sp")){
@@ -976,6 +945,11 @@ object Inventory {
                     }
                     inv.clear(i)
                 }
+
+                for (i in 20..24){
+                    if (getinv(getenemy(p)).getItem(i) == null)continue
+                    getinv(getenemy(p)).clear(i)
+                }
                 allplaysound(Sound.ENTITY_GENERIC_EXPLODE,p)
                 allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
 
@@ -989,13 +963,25 @@ object Inventory {
 
                 for (i in getdata(getenemy(p)).bjnumber-count downTo 0){//21-13=8
                     if (i == 0){
-                        allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                        for (int in getdata(getenemy(p)).bjnumber-count..12){
+                            if (i == 12){
+                                allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                                break
+                            }
+                            if (!yamahuda.contains(i))continue
+                            val card = drawcard(getenemy(p),i)
+                            getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
+                            inv.setItem(checkenemycard(p),card)
+                            allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
+                            allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
+                            break
+                        }
                         break
                     }
                     if (!yamahuda.contains(i))continue
                     val card = drawcard(getenemy(p),i)
-                    inv.setItem(checkplayercard(getenemy(p)), card)
-                    getinv(p).setItem(checkenemycard(p),card)
+                    getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
+                    inv.setItem(checkenemycard(p),card)
                     allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
                     allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
                     break
@@ -1007,6 +993,7 @@ object Inventory {
                 getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
                 getdata(p).harvest = true
                 allplaysound(Sound.BLOCK_SLIME_BLOCK_BREAK,p)
+                allplayersend(p,"§d${getplayer(p)?.name}はspカード使用時にspカードを引くようになった")
             }
 
             18->{//エクスチェンジ

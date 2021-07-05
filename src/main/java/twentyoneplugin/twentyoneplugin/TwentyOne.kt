@@ -11,6 +11,7 @@ import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.Inventory.replaceaction
+import twentyoneplugin.twentyoneplugin.Inventory.showcardcount
 import twentyoneplugin.twentyoneplugin.TOP.Companion.canjoin
 import twentyoneplugin.twentyoneplugin.TOP.Companion.datamap
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
@@ -62,15 +63,15 @@ class TwentyOne(private val player : UUID) : Thread(){
                 getplayer(getdata(player).enemy)?.openInventory(joininv)
             })
             startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
-            joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(player))
-            Util.allplaysound(Sound.BLOCK_ANVIL_PLACE, startplayer)
+            joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(joinplayer))
+            allplaysound(Sound.BLOCK_ANVIL_PLACE, startplayer)
             sleep(1000)
 
             var card = Inventory.drawcard(startplayer, true) ?:return
             startinv.setItem(Inventory.checkplayercard(startplayer), card)
             Inventory.nullcarddis(card)
             joininv.setItem(Inventory.checkenemycard(joinplayer), card)
-            Util.allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
 
             sleep(1000)
 
@@ -78,7 +79,7 @@ class TwentyOne(private val player : UUID) : Thread(){
             joininv.setItem(Inventory.checkplayercard(joinplayer), card)
             Inventory.nullcarddis(card)
             startinv.setItem(Inventory.checkenemycard(startplayer), card)
-            Util.allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
 
 
             sleep(1000)
@@ -86,14 +87,16 @@ class TwentyOne(private val player : UUID) : Thread(){
             card = Inventory.drawcard(startplayer, false) ?:return
             startinv.setItem(Inventory.checkplayercard(startplayer), card)
             joininv.setItem(Inventory.checkenemycard(joinplayer), card)
-            Util.allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
 
             sleep(1000)
 
             card = Inventory.drawcard(joinplayer, false) ?:return
             joininv.setItem(Inventory.checkplayercard(joinplayer), card)
             startinv.setItem(Inventory.checkenemycard(startplayer), card)
-            Util.allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
+            allplaysound(Sound.ITEM_BOOK_PAGE_TURN, startplayer)
+
+            showcardcount(player)
 
             var firstturn = player
             var first: UUID
@@ -145,17 +148,20 @@ class TwentyOne(private val player : UUID) : Thread(){
                 }
                 replaceaction(getinv(first))
                 first = if (first == player) getdata(player).enemy else player
+
+                if (!getdata(startplayer).through || !getdata(joinplayer).through)
                 fillaction(getinv(first))
 
             }
 
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
+            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
             sleep(1000)
+            allplaysound(Sound.ENTITY_GENERIC_EXPLODE,player)
 
 
             val gameend = endtwoturn(player)
@@ -191,8 +197,13 @@ class TwentyOne(private val player : UUID) : Thread(){
 
 
         }
-        getplayer(player)?.closeInventory()
-        getplayer(getenemy(player))?.closeInventory()
+
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            getplayer(player)?.closeInventory()
+            getplayer(getenemy(player))?.closeInventory()
+            return@Runnable
+        })
+
         allplayersend(player,"§5===============結果===============")
         allplayersend(player,"§e${getplayer(player)?.name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
         allplayersend(player,"§e${getplayer(getdata(player).enemy)?.name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")

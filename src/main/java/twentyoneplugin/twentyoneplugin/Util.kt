@@ -142,8 +142,8 @@ object Util {
         getdata(getdata(p).enemy).through = false
         getdata(p).spuse = true
         getdata(getenemy(p)).spuse = true
-        getdata(p).harvest = true
-        getdata(getenemy(p)).harvest = true
+        getdata(p).harvest = false
+        getdata(getenemy(p)).harvest = false
         if (battle?:return true){
             return if (getdata(getdata(p).enemy).tipcoin - getdata(getdata(p).enemy).bet < 0){
                 getdata(getdata(p).enemy).tipcoin = 0
