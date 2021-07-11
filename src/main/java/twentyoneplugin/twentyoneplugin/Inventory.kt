@@ -38,12 +38,11 @@ object Inventory {
         inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
         getdata(p).bjnumber = 21
         getdata(enemy).bjnumber = 21
-        getdata(p).bet = 1
-        getdata(enemy).bet = 1
+        getdata(p).bet = plugin.config.getInt("firstbet")
+        getdata(enemy).bet = plugin.config.getInt("firstbet")
 
-
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy)?.name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(enemy).tipcoin}枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e1/${getdata(p).tipcoin}枚"))))
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(enemy).tipcoin}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(p).tipcoin}枚"))))
         return inv
     }
     //cccccccch
@@ -161,7 +160,7 @@ object Inventory {
             p.sendmsg("§cあなたはすでにバーストしています！")
             return false
         }
-        if (per(10.0)){
+        if (per(15.0)){
             if (checkplayersp(p) != -1){
                 inv.setItem(checkplayersp(p), drawspcard(p))
                 getplayer(p)?.playsound(Sound.BLOCK_ANVIL_PLACE)
@@ -175,7 +174,6 @@ object Inventory {
         inv.setItem(checkplayercard(p), card)
         eninv.setItem(checkenemycard(getdata(p).enemy),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
-        showcardcount(p)
         getdata(p).through = false
         return true
     }
@@ -239,7 +237,7 @@ object Inventory {
     fun checkplayerspfornbt(p : UUID): ArrayList<Int> {//調べる対象を選択
         val inv = getinv(p) //36~44
         val itemlist = ArrayList<Int>()
-        for (i in 36..44){
+        for (i in 20..24){
             if (inv.getItem(i) != null)continue
             itemlist.add(getnbt(inv.getItem(i)!!,"sp"))
         }
@@ -251,15 +249,28 @@ object Inventory {
     }
 
     fun showcardcount(p : UUID){
-        getinv(p).getItem(27)!!.itemMeta.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(p)}"))
-        getinv(getenemy(p)).getItem(27)!!.itemMeta.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
-            getenemy(p))}"))
+        val item1 = getinv(p).getItem(27)!!
+        val meta1 = item1.itemMeta
+        val item2 = getinv(p).getItem(8)!!
+        val meta2 = item2.itemMeta
+        val item3 = getinv(getenemy(p)).getItem(27)!!
+        val meta3 = item3.itemMeta
+        val item4 = getinv(getenemy(p)).getItem(8)!!
+        val meta4 = item4.itemMeta
+        meta1.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(p)} / ${getdata(p).bjnumber}"))
+        meta3.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+            getenemy(p))} / ${getdata(p).bjnumber}"))
 
-        getinv(p).getItem(8)!!.itemMeta.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
-            getenemy(p)) - getnbt(getinv(p).getItem(7)!!,"cardnum")} + ?"))
+        meta2.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+            getenemy(p)) - getnbt(getinv(p).getItem(7)!!,"cardnum")} + ? / ${getdata(p).bjnumber}"))
 
-        getinv(getenemy(p)).getItem(8)!!.itemMeta.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(
-            p) - getnbt(getinv(getenemy(p)).getItem(7)!!,"cardnum")} + ?"))
+        meta4.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(
+            p) - getnbt(getinv(getenemy(p)).getItem(7)!!,"cardnum")} + ? / ${getdata(p).bjnumber}"))
+
+        item1.itemMeta = meta1
+        item2.itemMeta = meta2
+        item3.itemMeta = meta3
+        item4.itemMeta = meta4
         return
     }
 
@@ -472,7 +483,7 @@ object Inventory {
                     Component.text("§e自分が最後にひいたカードを山札に戻す。"),
                     Component.text("§e自分の残りのカードが一枚だと使えない。")),
                     spcards[sprandom]!!)
-                setnbt(item,"sp",21)
+                setnbt(item,"sp",22)
                 return item
             }
 
@@ -564,15 +575,31 @@ object Inventory {
             }
 
             13->{
+                getinv(p).clear(slot)
+                tumespcards(p)
                 if (checkplayersp(p) < 38 || checkplayersp(p) == -1){
                     p.sendmsg("§cspカードが2枚必要です！")
+                    val returnitem = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ", mutableListOf(
+                        Component.text("§e自分のSPカードをランダムで2枚捨てる。"),
+                        Component.text("§eさらにSPカードを3枚引く。")),
+                        spcards[13]!!)
+                    setnbt(item,"sp",13)
+                    getinv(p).setItem(checkplayersp(p),returnitem)
                     return
                 }
             }
 
             14->{
+                getinv(p).clear(slot)
+                tumespcards(p)
                 if (checkplayersp(p) < 37 || checkplayersp(p) == -1){
                     p.sendmsg("§cspカードが1枚必要です！")
+                    val returnitem = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ+", mutableListOf(
+                        Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
+                        Component.text("§eさらにSPカードを3枚引く。")),
+                        spcards[14]!!)
+                    setnbt(item,"sp",14)
+                    getinv(p).setItem(checkplayersp(p),returnitem)
                     return
                 }
             }
@@ -597,8 +624,16 @@ object Inventory {
             }
 
             17->{
-                if (checkplayerspfornbt(p).contains(17)){
-                    p.sendmsg("§すでにハーヴェストが出されています")
+
+                for (i in 20..24){
+                    if (getinv(p).getItem(i) == null)continue
+                    if (getnbt(getinv(p).getItem(i)!!,"sp") == 19){
+                        p.sendmsg("§cすでにハーヴェストが出されています！")
+                        return
+                    }
+                }
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cあなたはもうspカードを場に出すことができません！")
                     return
                 }
             }
@@ -712,7 +747,7 @@ object Inventory {
 
                     11,12->{
                         getdata(getenemy(p)).bet -= getnbt(inv.getItem(enemyspslot)!!,"betup")
-                        betchange(p)
+                        betchange(getenemy(p))
                     }
 
                     19,20,21->{
@@ -741,7 +776,7 @@ object Inventory {
 
                         11,12->{
                             getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
+                            betchange(getenemy(p))
                         }
 
                         19,20,21->{
@@ -804,7 +839,7 @@ object Inventory {
                 inv.setItem(checkplayerspput(p),item)
                 getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
                 getdata(getenemy(p)).bet += getnbt(item,"betup")
-                betchange(p)
+                betchange(getenemy(p))
             }
 
             7->{//アルティメットドロー
@@ -895,7 +930,7 @@ object Inventory {
                 allplaysound(Sound.ENTITY_ARROW_HIT_PLAYER,p)
 
                 getdata(p).bet += getnbt(item,"betup")
-                betchange(getenemy(p))
+                betchange(p)
             }
 
             13->{//spチェンジ
@@ -931,7 +966,7 @@ object Inventory {
 
                         11,12->{
                             getdata(getenemy(p)).bet -= getnbt(inv.getItem(i)!!,"betup")
-                            betchange(p)
+                            betchange(getenemy(p))
                         }
 
                         19,20,21->{
@@ -950,6 +985,9 @@ object Inventory {
                     if (getinv(getenemy(p)).getItem(i) == null)continue
                     getinv(getenemy(p)).clear(i)
                 }
+
+                getinv(p).setItem(checkplayerspput(p),item)
+                getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
                 allplaysound(Sound.ENTITY_GENERIC_EXPLODE,p)
                 allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
 
@@ -961,31 +999,37 @@ object Inventory {
                 val count = countcard(getenemy(p))
                 val yamahuda = yamahudacheck(getenemy(p))!!
 
-                for (i in getdata(getenemy(p)).bjnumber-count downTo 0){//21-13=8
-                    if (i == 0){
-                        for (int in getdata(getenemy(p)).bjnumber-count..12){
-                            if (i == 12){
-                                allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
-                                break
-                            }
-                            if (!yamahuda.contains(i))continue
-                            val card = drawcard(getenemy(p),i)
-                            getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
-                            inv.setItem(checkenemycard(p),card)
-                            allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
-                            allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
+                if (count >= getdata(p).bjnumber){
+                    for (int in 1..12){
+                        if (int == 12){
+                            allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
                             break
                         }
+                        if (!yamahuda.contains(int))continue
+                        val card = drawcard(getenemy(p),int)
+                        getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
+                        inv.setItem(checkenemycard(p),card)
+                        allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${int}のカードを引いた")
+                        allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
                         break
                     }
-                    if (!yamahuda.contains(i))continue
-                    val card = drawcard(getenemy(p),i)
-                    getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
-                    inv.setItem(checkenemycard(p),card)
-                    allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
-                    allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
-                    break
+                }else{
+                    for (i in getdata(getenemy(p)).bjnumber-count downTo 0){//21-13=8
+                        if (i == 0){
+                            allplayersend(p,"§b適切なカードが見つからなかったので、カードは引かれなかった")
+                            break
+                        }
+                        if (!yamahuda.contains(i))continue
+                        val card = drawcard(getenemy(p),i)
+                        getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
+                        inv.setItem(checkenemycard(p),card)
+                        allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
+                        allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
+                        break
+                    }
                 }
+
+
             }
 
             17->{//ハーヴェスト
@@ -1016,16 +1060,18 @@ object Inventory {
             }
 
             19,20,21->{//ゴール17,24,27  //15..11
-                for (i in 20..24){
+                for (i in 15 downTo 11){
                     if (inv.getItem(i) == null)continue
                     if (getnbt(inv.getItem(i)!!,"sp") in 19..21){
+                        plugin.logger.info("test")
                         inv.clear(i)
                     }
                 }
 
-                for (i in 15 downTo 11){
+                for (i in 20..24){
                     if (getinv(getenemy(p)).getItem(i) == null)continue
                     if (getnbt(getinv(getenemy(p)).getItem(i)!!,"sp") in 19..21){
+                        plugin.logger.info("test")
                         getinv(getenemy(p)).clear(i)
                     }
                 }

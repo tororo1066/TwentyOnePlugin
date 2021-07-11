@@ -48,11 +48,11 @@ object Util {
     }
 
     fun Player.playsound(sound : Sound){
-        this.playSound(this.location,sound,2f,2f)
+        this.playSound(this.location,sound,3f,1f)
         return
     }
     fun Player.playsound(sound : String){
-        this.playSound(this.location,sound,2f,2f)
+        this.playSound(this.location,sound,3f,1f)
         return
     }
     fun allplaysound(sound: Sound, uuid: UUID){

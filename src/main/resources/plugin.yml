@@ -1,7 +1,7 @@
 name: TwentyOnePlugin
 version: @version@
 main: twentyoneplugin.twentyoneplugin.TOP
-api-version: 1.16
+api-version: 1.17
 
 commands:
   21:

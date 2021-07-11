@@ -140,6 +140,7 @@ class TwentyOne(private val player : UUID) : Thread(){
                     }
 
                 }
+                showcardcount(player)
                 if (getdata(first).action == "spuse"){
                     sleep(5000)
                     getdata(first).action = ""
@@ -155,11 +156,11 @@ class TwentyOne(private val player : UUID) : Thread(){
             }
 
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
             sleep(500)
-            allplaysound(Sound.BLOCK_ANVIL_DESTROY,player)
+            allplaysound(Sound.BLOCK_ANVIL_PLACE,player)
             sleep(1000)
             allplaysound(Sound.ENTITY_GENERIC_EXPLODE,player)
 
