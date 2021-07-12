@@ -54,6 +54,24 @@ class TOP : JavaPlugin() {
         getCommand("21")?.setExecutor(this)
         server.pluginManager.registerEvents(EventListener,this)
         vault = VaultManager(this)
+        val mysql = MySQLManager(this,"21firstload")
+        if (!mysql.connected){
+            logger.warning("データベースへの接続に失敗しました")
+            logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
+        }else{
+            mysql.execute("CREATE TABLE IF NOT EXISTS `21` (\n" +
+                    "\t`start` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`join` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`tip` DOUBLE NULL DEFAULT NULL,\n" +
+                    "\t`firstcoin` INT(10) NULL DEFAULT NULL,\n" +
+                    "\t`startlastcoin` INT(10) NULL DEFAULT NULL,\n" +
+                    "\t`joinlastcoin` INT(10) NULL DEFAULT NULL\n" +
+                    ")\n" +
+                    "COLLATE='utf8mb4_0900_ai_ci'\n" +
+                    "ENGINE=InnoDB\n" +
+                    ";\n")
+        }
+        mysql.close()
         if (config.getBoolean("switch.savemode")){
             mode = config.getBoolean("switch.mode")
         }else{

@@ -3,6 +3,9 @@ version: @version@
 main: twentyoneplugin.twentyoneplugin.TOP
 api-version: 1.17
 
+depend:
+  - Vault
+
 commands:
   21:
 
