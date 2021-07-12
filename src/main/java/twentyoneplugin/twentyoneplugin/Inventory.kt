@@ -160,7 +160,7 @@ object Inventory {
             p.sendmsg("§cあなたはすでにバーストしています！")
             return false
         }
-        if (per(15.0)){
+        if (per(plugin.config.getDouble("spdrawchance"))){
             if (checkplayersp(p) != -1){
                 inv.setItem(checkplayersp(p), drawspcard(p))
                 getplayer(p)?.playsound(Sound.BLOCK_ANVIL_PLACE)
@@ -234,15 +234,6 @@ object Inventory {
         return -1
     }
 
-    fun checkplayerspfornbt(p : UUID): ArrayList<Int> {//調べる対象を選択
-        val inv = getinv(p) //36~44
-        val itemlist = ArrayList<Int>()
-        for (i in 20..24){
-            if (inv.getItem(i) != null)continue
-            itemlist.add(getnbt(inv.getItem(i)!!,"sp"))
-        }
-        return itemlist
-    }
 
     fun getinv(p : UUID): Inventory {
         return getdata(p).inv
