@@ -26,6 +26,8 @@ import kotlin.random.nextInt
 
 object Inventory {
 
+
+
     fun invsetup(p : UUID, enemy : UUID): Inventory {
         val inv = Bukkit.createInventory(null,54, Component.text("21table"))
         inv.setItem(8,createhead(enemy))
@@ -160,19 +162,16 @@ object Inventory {
             p.sendmsg("§cあなたはすでにバーストしています！")
             return false
         }
+
+        val card = drawcard(p,false) ?: return false
+        inv.setItem(checkplayercard(p), card)
+        eninv.setItem(checkenemycard(getdata(p).enemy),card)
         if (per(plugin.config.getDouble("spdrawchance"))){
             if (checkplayersp(p) != -1){
                 inv.setItem(checkplayersp(p), drawspcard(p))
                 getplayer(p)?.playsound(Sound.BLOCK_ANVIL_PLACE)
             }
         }
-        val card = drawcard(p,false)
-        if (card == null){
-            getdata(p).action = "through"
-            return false
-        }
-        inv.setItem(checkplayercard(p), card)
-        eninv.setItem(checkenemycard(getdata(p).enemy),card)
         allplaysound(Sound.ITEM_BOOK_PAGE_TURN,p)
         getdata(p).through = false
         return true
@@ -382,7 +381,7 @@ object Inventory {
                     Component.text("§e場に置かれている間、自分の賭け数を2つ減らす。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",12)
-                setnbt(item,"betup",-1)
+                setnbt(item,"betup",-2)
                 return item
             }
 
@@ -475,6 +474,15 @@ object Inventory {
                     Component.text("§e自分の残りのカードが一枚だと使えない。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",22)
+                return item
+            }
+
+            23->{
+                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デスぺレーション",mutableListOf(
+                    Component.text("§e場に置かれている間、互いの賭け数が100上がる。"),
+                    Component.text("§eまた、相手はカードを引けない。")),
+                    spcards[sprandom]!!)
+                setnbt(item,"sp",23)
                 return item
             }
 
@@ -618,7 +626,7 @@ object Inventory {
 
                 for (i in 20..24){
                     if (getinv(p).getItem(i) == null)continue
-                    if (getnbt(getinv(p).getItem(i)!!,"sp") == 19){
+                    if (getnbt(getinv(p).getItem(i)!!,"sp") == 17){
                         p.sendmsg("§cすでにハーヴェストが出されています！")
                         return
                     }
@@ -653,6 +661,21 @@ object Inventory {
                 if (checkplayercard(p) == 28){
                     p.sendmsg("§cあなたのカードは1枚しかありません！")
                     return
+                }
+            }
+
+            23->{
+                if (checkplayerspput(p) == -1){
+                    p.sendmsg("§cあなたはもうspカードを場に出すことができません！")
+                    return
+                }
+
+                for (i in 20..24){
+                    if (getinv(p).getItem(i) == null)continue
+                    if (getnbt(getinv(p).getItem(i)!!,"sp") == 23){
+                        p.sendmsg("§cすでにデスぺレーションが出されています！")
+                        return
+                    }
                 }
             }
 
@@ -749,6 +772,12 @@ object Inventory {
                     17->{
                         getdata(getenemy(p)).harvest = false
                     }
+
+                    23->{
+                        getdata(p).death = false
+                        getdata(p).bet -= 100
+                        getdata(getenemy(p)).bet -= 100
+                    }
                 }
 
                 allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後に出したspカードは消えた")
@@ -777,6 +806,11 @@ object Inventory {
 
                         17->{
                             getdata(getenemy(p)).harvest = false
+                        }
+                        23->{
+                            getdata(p).death = false
+                            getdata(p).bet -= 100
+                            getdata(getenemy(p)).bet -= 100
                         }
                     }
                     inv.clear(i)
@@ -968,6 +1002,12 @@ object Inventory {
                         17->{
                             getdata(getenemy(p)).harvest = false
                         }
+
+                        23->{
+                            getdata(p).death = false
+                            getdata(p).bet -= 100
+                            getdata(getenemy(p)).bet -= 100
+                        }
                     }
                     inv.clear(i)
                 }
@@ -1054,7 +1094,6 @@ object Inventory {
                 for (i in 15 downTo 11){
                     if (inv.getItem(i) == null)continue
                     if (getnbt(inv.getItem(i)!!,"sp") in 19..21){
-                        plugin.logger.info("test")
                         inv.clear(i)
                     }
                 }
@@ -1062,7 +1101,6 @@ object Inventory {
                 for (i in 20..24){
                     if (getinv(getenemy(p)).getItem(i) == null)continue
                     if (getnbt(getinv(getenemy(p)).getItem(i)!!,"sp") in 19..21){
-                        plugin.logger.info("test")
                         getinv(getenemy(p)).clear(i)
                     }
                 }
@@ -1093,6 +1131,17 @@ object Inventory {
                 allplayersend(p,"§d${getplayer(p)?.name}の最後にひいたカードは山札に戻された")
             }
 
+            23->{
+                inv.setItem(checkplayerspput(p),item)
+                getinv(getenemy(p)).setItem(checkenemyspput(p),item)
+                getdata(getenemy(p)).bet += 100
+                getdata(p).bet += 100
+                getdata(getenemy(p)).death = true
+                betchange(getenemy(p))
+                betchange(p)
+                allplayersend(p,"§d互いの賭け数が100になり、${getplayer(getenemy(p))?.name}はカードを引けなくなった")
+            }
+
 
         }
 
@@ -1103,6 +1152,7 @@ object Inventory {
     }
 
     fun drawcard(p : UUID, invisible : Boolean) : ItemStack? {
+        if (getdata(p).death)return null
         val cardnum = yamahudacheck(p)?.random()?:return null
         val item = createitem(if (invisible) Material.BOOK else Material.PAPER,cardnum.toString(), cardcsm[cardnum-1])
         setnbt(item,"cardnum",cardnum)

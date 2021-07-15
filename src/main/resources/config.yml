@@ -118,6 +118,10 @@ sp:
     enable: true
     csm: 0
 
+  23:
+    enable: true
+    csm: 0
+
 
 tipcoin: 10 #初期チップ
 round: 5 #ラウンド数

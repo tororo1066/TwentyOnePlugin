@@ -138,6 +138,8 @@ object Util {
     }
 
     fun gamelatersetting(p : UUID, battle : Boolean?): Boolean {//trueだとpの勝利、falseだとenemyの勝利、nullでdraw
+        getdata(p).death = false
+        getdata(getenemy(p)).death = false
         getdata(p).through = false
         getdata(getdata(p).enemy).through = false
         getdata(p).spuse = true
@@ -145,9 +147,9 @@ object Util {
         getdata(p).harvest = false
         getdata(getenemy(p)).harvest = false
         if (battle?:return true){
-            return if (getdata(getdata(p).enemy).tipcoin - getdata(getdata(p).enemy).bet < 0){
-                getdata(getdata(p).enemy).tipcoin = 0
-                getdata(p).tipcoin += getdata(getdata(p).enemy).bet
+            return if (getdata(getenemy(p)).tipcoin - getdata(getenemy(p)).bet <= 0){
+                getdata(p).tipcoin += getdata(getenemy(p)).tipcoin
+                getdata(getenemy(p)).tipcoin = 0
                 false
             }else{
                 getdata(getdata(p).enemy).tipcoin -= getdata(getdata(p).enemy).bet
@@ -155,9 +157,9 @@ object Util {
                 true
             }
         }else{
-            return if (getdata(p).tipcoin - getdata(p).bet < 0){
+            return if (getdata(p).tipcoin - getdata(p).bet <= 0){
+                getdata(getdata(p).enemy).tipcoin += getdata(p).tipcoin
                 getdata(p).tipcoin = 0
-                getdata(getdata(p).enemy).tipcoin += getdata(p).bet
                 false
             }else{
                 getdata(p).tipcoin -= getdata(p).bet

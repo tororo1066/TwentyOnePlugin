@@ -1,9 +1,5 @@
 package twentyoneplugin.twentyoneplugin
 
-import net.kyori.adventure.text.Component.text
-import net.kyori.adventure.text.event.ClickEvent
-import net.kyori.adventure.text.event.HoverEvent
-import net.kyori.adventure.text.event.HoverEventSource
 import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.command.Command
@@ -33,6 +29,7 @@ class PlayerData{
     var action = ""
     var spuse = true
     var harvest = false
+    var death = false
 
     fun tipset(tipdouble : Double){
         tip = tipdouble
@@ -60,8 +57,8 @@ class TOP : JavaPlugin() {
             logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
         }else{
             mysql.execute("CREATE TABLE IF NOT EXISTS `21` (\n" +
-                    "\t`start` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
-                    "\t`join` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`startplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`joinplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`tip` DOUBLE NULL DEFAULT NULL,\n" +
                     "\t`firstcoin` INT(10) NULL DEFAULT NULL,\n" +
                     "\t`startlastcoin` INT(10) NULL DEFAULT NULL,\n" +
@@ -70,15 +67,17 @@ class TOP : JavaPlugin() {
                     "COLLATE='utf8mb4_0900_ai_ci'\n" +
                     "ENGINE=InnoDB\n" +
                     ";\n")
+
+            if (config.getBoolean("switch.savemode")){
+                mode = config.getBoolean("switch.mode")
+            }else{
+                mode = false
+                config.set("switch.mode",false)
+                saveConfig()
+            }
         }
         mysql.close()
-        if (config.getBoolean("switch.savemode")){
-            mode = config.getBoolean("switch.mode")
-        }else{
-            mode = false
-            config.set("switch.mode",false)
-            saveConfig()
-        }
+
         plugin = this
         var int = 1
         while (config.isSet("sp.$int")){

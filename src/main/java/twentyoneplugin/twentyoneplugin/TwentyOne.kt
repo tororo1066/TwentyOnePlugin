@@ -1,7 +1,6 @@
 package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.event.ClickEvent
 import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.Sound
@@ -28,7 +27,6 @@ import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.timecount
 import twentyoneplugin.twentyoneplugin.Util.win
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -168,7 +166,7 @@ class TwentyOne(private val player : UUID) : Thread(){
             val gameend = endtwoturn(player)
             if (gameend == null)draw(player) else if (gameend == true) win(player) else win(getenemy(player))
 
-            gamelatersetting(player,gameend)
+            if (!gamelatersetting(player,gameend))break
 
             if (plugin.config.getInt("round") != loops){
                 val spsave = ArrayList<ItemStack>()
@@ -200,8 +198,8 @@ class TwentyOne(private val player : UUID) : Thread(){
         }
 
         Bukkit.getScheduler().runTask(plugin, Runnable {
-            getplayer(player)?.closeInventory()
-            getplayer(getenemy(player))?.closeInventory()
+            if (getplayer(player) != null) getplayer(player)?.closeInventory()
+            if (getplayer(getenemy(player)) != null) getplayer(getenemy(player))?.closeInventory()
             return@Runnable
         })
 
@@ -210,15 +208,15 @@ class TwentyOne(private val player : UUID) : Thread(){
         allplayersend(player,"§e${getplayer(getdata(player).enemy)?.name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
         allplayersend(player,"§5===============結果===============")
 
-        vault.withdraw(player, getdata(player).tipcoin * getdata(player).tip)
-        vault.withdraw(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
+        vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)
+        vault.deposit(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
 
         val mysql = MySQLManager(plugin,"save21log")
-        mysql.execute("INSERT INTO 21 (start, join, tip, firstcoin, startlastcoin, joinlastcoin) VALUES " +
-                "('${getplayer(player)?.name}', '${getplayer(getdata(player).enemy)?.name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        mysql.execute("INSERT INTO 21 VALUES " + "('${getplayer(player)?.name}', '${getplayer(getdata(player).enemy)?.name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
-        datamap.remove(player)
         datamap.remove(getenemy(player))
+        datamap.remove(player)
+
         return
     }
 }
