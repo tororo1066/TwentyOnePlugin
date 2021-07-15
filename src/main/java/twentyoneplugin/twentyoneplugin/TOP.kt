@@ -56,7 +56,7 @@ class TOP : JavaPlugin() {
             logger.warning("データベースへの接続に失敗しました")
             logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
         }else{
-            mysql.execute("CREATE TABLE IF NOT EXISTS `21` (\n" +
+            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyoneDB` (\n" +
                     "\t`startplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`joinplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`tip` DOUBLE NULL DEFAULT NULL,\n" +

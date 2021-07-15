@@ -777,6 +777,8 @@ object Inventory {
                         getdata(p).death = false
                         getdata(p).bet -= 100
                         getdata(getenemy(p)).bet -= 100
+                        betchange(getenemy(p))
+                        betchange(p)
                     }
                 }
 
@@ -811,6 +813,8 @@ object Inventory {
                             getdata(p).death = false
                             getdata(p).bet -= 100
                             getdata(getenemy(p)).bet -= 100
+                            betchange(getenemy(p))
+                            betchange(p)
                         }
                     }
                     inv.clear(i)
@@ -1007,6 +1011,8 @@ object Inventory {
                             getdata(p).death = false
                             getdata(p).bet -= 100
                             getdata(getenemy(p)).bet -= 100
+                            betchange(getenemy(p))
+                            betchange(p)
                         }
                     }
                     inv.clear(i)

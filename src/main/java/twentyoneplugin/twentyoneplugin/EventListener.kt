@@ -6,12 +6,14 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
+import twentyoneplugin.twentyoneplugin.Inventory.betchange
 import twentyoneplugin.twentyoneplugin.Inventory.checkitem
 import twentyoneplugin.twentyoneplugin.Inventory.createitem
 import twentyoneplugin.twentyoneplugin.Inventory.setcard
 import twentyoneplugin.twentyoneplugin.Inventory.showcardcount
 import twentyoneplugin.twentyoneplugin.Inventory.spuse
 import twentyoneplugin.twentyoneplugin.Util.getdata
+import twentyoneplugin.twentyoneplugin.Util.getenemy
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
 
 object EventListener : Listener {
@@ -34,7 +36,15 @@ object EventListener : Listener {
             getdata(p.uniqueId).action = "through"
             return
         }
-        if (e.slot == 8 || e.slot == 27) showcardcount(p.uniqueId)
+        if (e.slot == 8 || e.slot == 27){
+            showcardcount(p.uniqueId)
+            return
+        }
+        if (e.slot == 26 || e.slot == 9){
+            betchange(p.uniqueId)
+            betchange(getenemy(p.uniqueId))
+            return
+        }
         if (e.slot in 36..44){
             if (!e.inventory.contains(createitem(Material.BLACK_STAINED_GLASS_PANE,"§f§lカードを引く")))return
             if (!getdata(p.uniqueId).spuse){
