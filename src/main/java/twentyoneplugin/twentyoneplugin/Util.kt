@@ -37,8 +37,8 @@ object Util {
     }
 
     fun allplayersend(p : UUID, s : String){
-        getplayer(p)!!.sendMessage(s)
-        getplayer(getdata(p).enemy)!!.sendMessage(s)
+        getplayer(p)?.sendMessage(s)
+        getplayer(getdata(p).enemy)?.sendMessage(s)
         return
     }
 
@@ -51,20 +51,13 @@ object Util {
         this.playSound(this.location,sound,3f,1f)
         return
     }
-    fun Player.playsound(sound : String){
-        this.playSound(this.location,sound,3f,1f)
-        return
-    }
+
     fun allplaysound(sound: Sound, uuid: UUID){
-        getplayer(uuid)!!.playsound(sound)
-        getplayer(getdata(uuid).enemy)!!.playsound(sound)
+        getplayer(uuid)?.playsound(sound)
+        getplayer(getdata(uuid).enemy)?.playsound(sound)
         return
     }
-    fun allplaysound(sound: String, uuid: UUID){
-        getplayer(uuid)!!.playsound(sound)
-        getplayer(getdata(uuid).enemy)!!.playsound(sound)
-        return
-    }
+
 
     fun getplayer(p : UUID): @Nullable Player? {
         return Bukkit.getPlayer(p)

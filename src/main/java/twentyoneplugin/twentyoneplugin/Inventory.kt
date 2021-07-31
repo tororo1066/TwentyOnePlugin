@@ -247,14 +247,14 @@ object Inventory {
         val meta3 = item3.itemMeta
         val item4 = getinv(getenemy(p)).getItem(8)!!
         val meta4 = item4.itemMeta
-        meta1.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(p)} / ${getdata(p).bjnumber}"))
-        meta3.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+        meta1.displayName(Component.text("§e${getdata(p).name}の合計数字 ${countcard(p)} / ${getdata(p).bjnumber}"))
+        meta3.displayName(Component.text("§e${getdata(getenemy(p)).name}の合計数字 ${countcard(
             getenemy(p))} / ${getdata(p).bjnumber}"))
 
-        meta2.displayName(Component.text("§e${getplayer(getenemy(p))?.name}の合計数字 ${countcard(
+        meta2.displayName(Component.text("§e${getdata(getenemy(p)).name}の合計数字 ${countcard(
             getenemy(p)) - getnbt(getinv(p).getItem(7)!!,"cardnum")} + ? / ${getdata(p).bjnumber}"))
 
-        meta4.displayName(Component.text("§e${getplayer(p)?.name}の合計数字 ${countcard(
+        meta4.displayName(Component.text("§e${getdata(p).name}の合計数字 ${countcard(
             p) - getnbt(getinv(getenemy(p)).getItem(7)!!,"cardnum")} + ? / ${getdata(p).bjnumber}"))
 
         item1.itemMeta = meta1
@@ -1193,15 +1193,10 @@ object Inventory {
         return
     }
 
-    fun setallplayer(p : UUID,set : Int, item : ItemStack){
-        getinv(p).setItem(set,item)
-        getinv(getdata(p).enemy).setItem(set,item)
-        return
-    }
 
     fun betchange(p: UUID){//変える側
-        getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
-        getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
+        getinv(p).setItem(9,createitem(Material.GOLD_NUGGET,"§c${getdata(p).name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
+        getinv(getdata(p).enemy).setItem(26,createitem(Material.GOLD_NUGGET,"§c${getdata(p).name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).bet}/${getdata(p).tipcoin}枚"))))
         return
     }
 

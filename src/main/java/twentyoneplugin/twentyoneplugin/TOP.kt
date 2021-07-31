@@ -20,6 +20,7 @@ import kotlin.properties.Delegates
 
 class PlayerData{
     lateinit var enemy : UUID
+    var name = ""
     var tip : Double = 0.0
     var tipcoin = plugin.config.getInt("tipcoin")
     var bet = 0
@@ -37,6 +38,7 @@ class PlayerData{
 
     fun dataset(player : Player, enemyplayer : Player){
         enemy = enemyplayer.uniqueId
+        name = player.name
         inv = invsetup(player.uniqueId,enemyplayer.uniqueId)
     }
 }
