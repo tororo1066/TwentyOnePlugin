@@ -37,6 +37,11 @@ class TwentyOne(private val player : UUID) : Thread(){
     override fun run() {
         for (i in 59 downTo 0){
             if (!canjoin.contains(player))break
+            if (getplayer(player) == null){
+                datamap.remove(player)
+                canjoin.remove(player)
+                return
+            }
             if (i == 0){
                 Bukkit.broadcast(Component.text("§l${getplayer(player)?.name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
                 datamap.remove(player)
@@ -51,7 +56,7 @@ class TwentyOne(private val player : UUID) : Thread(){
         vault.withdraw(player, getdata(player).tip * plugin.config.getInt("tipcoin"))
         vault.withdraw(getdata(player).enemy, getdata(player).tip * plugin.config.getInt("tipcoin"))
 
-
+        var firstturn = player
         for (loops in 1..plugin.config.getInt("round")){
             val startplayer = player
             val joinplayer = getdata(player).enemy
@@ -97,7 +102,7 @@ class TwentyOne(private val player : UUID) : Thread(){
 
             showcardcount(player)
 
-            var firstturn = player
+
             var first: UUID
 
 
@@ -205,8 +210,8 @@ class TwentyOne(private val player : UUID) : Thread(){
         })
 
         allplayersend(player,"§5===============結果===============")
-        allplayersend(player,"§e${getplayer(player)?.name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
-        allplayersend(player,"§e${getplayer(getdata(player).enemy)?.name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"§e${getdata(player).name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"§e${getdata(getenemy(player)).name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
         allplayersend(player,"§5===============結果===============")
 
         vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)

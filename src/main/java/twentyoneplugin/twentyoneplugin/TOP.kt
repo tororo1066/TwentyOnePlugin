@@ -46,7 +46,7 @@ class PlayerData{
 
 class TOP : JavaPlugin() {
 
-    var mode by Delegates.notNull<Boolean>()
+    var mode = false
 
 
     override fun onEnable() {
@@ -58,6 +58,7 @@ class TOP : JavaPlugin() {
         if (!mysql.connected){
             logger.warning("データベースへの接続に失敗しました")
             logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
+            mode = false
         }else{
             mysql.execute("CREATE TABLE IF NOT EXISTS `twentyoneDB` (\n" +
                     "\t`startplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +

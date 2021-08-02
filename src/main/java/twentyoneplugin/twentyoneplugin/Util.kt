@@ -105,11 +105,11 @@ object Util {
 
     fun win(p : UUID){ //指定したプレイヤーを勝利にする
         val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
-        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6§l${getplayer(p)?.name}の勝利！", mutableListOf(Component.text("§e${getplayer(p)?.name}の合計：${countcard(p)}"),
-            Component.text("§e${getplayer(getdata(p).enemy)?.name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
+        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6§l${getdata(p).name}の勝利！", mutableListOf(Component.text("§e${getdata(p).name}の合計：${countcard(p)}"),
+            Component.text("§e${getdata(getenemy(p)).name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {
-            getplayer(p)?.openInventory(inv)!!
-            getplayer(getdata(p).enemy)?.openInventory(inv)!!
+            if (getplayer(p) != null) getplayer(p)?.openInventory(inv)
+            if (getplayer(getdata(p).enemy) != null) getplayer(getdata(p).enemy)?.openInventory(inv)
 
         })
         Thread.sleep(5000)
@@ -118,11 +118,11 @@ object Util {
 
     fun draw(p: UUID){
         val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
-        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§l引き分け", mutableListOf(Component.text("§e${getplayer(p)?.name}の合計：${countcard(p)}"),
-            Component.text("§e${getplayer(getdata(p).enemy)?.name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
+        intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§l引き分け", mutableListOf(Component.text("§e${getdata(p).name}の合計：${countcard(p)}"),
+            Component.text("§e${getdata(getenemy(p)).name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {
-            getplayer(p)?.openInventory(inv)!!
-            getplayer(getdata(p).enemy)?.openInventory(inv)!!
+            if (getplayer(p) != null) getplayer(p)?.openInventory(inv)
+            if (getplayer(getdata(p).enemy) != null) getplayer(getdata(p).enemy)?.openInventory(inv)
         })
         Thread.sleep(5000)
         return
@@ -159,22 +159,6 @@ object Util {
             }
         }
     }
-
-    fun spawnFireworks(location: Location, amount: Int) {
-        val loc: Location = location
-        val fw: Firework = loc.world.spawnEntity(loc, EntityType.FIREWORK) as Firework
-        val fwm: FireworkMeta = fw.fireworkMeta
-        fwm.power = 2
-        fwm.addEffect(FireworkEffect.builder().withColor(Color.YELLOW).flicker(true).build())
-        fw.fireworkMeta = fwm
-        fw.detonate()
-        for (i in 0 until amount) {
-            val fw2: Firework = loc.world.spawnEntity(loc.add(Vector (Random.nextDouble(-2.0,2.0),0.0, Random.nextDouble(-2.0,2.0))), EntityType.FIREWORK) as Firework
-            fw2.fireworkMeta = fwm
-        }
-    }
-
-
 
 
 }

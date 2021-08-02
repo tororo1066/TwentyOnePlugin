@@ -43,8 +43,8 @@ object Inventory {
         getdata(p).bet = plugin.config.getInt("firstbet")
         getdata(enemy).bet = plugin.config.getInt("firstbet")
 
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getplayer(enemy)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(enemy).tipcoin}枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getplayer(p)?.name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(p).tipcoin}枚"))))
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getdata(p).name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(enemy).tipcoin}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getdata(getenemy(p)).name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(p).tipcoin}枚"))))
         return inv
     }
     //cccccccch
@@ -267,7 +267,7 @@ object Inventory {
     fun drawspcard(p: UUID): ItemStack {
 
         allplaysound(Sound.ENTITY_PLAYER_LEVELUP,p)
-        allplayersend(p,"§a${getplayer(p)?.name}はspカードを引いた")
+        allplayersend(p,"§a${getdata(p).name}はspカードを引いた")
 
         when(val sprandom = spcards.keys.random()){
             1->{
@@ -686,8 +686,8 @@ object Inventory {
         getdata(p).action = "spuse"
         if (getdata(p).harvest) getinv(p).setItem(checkplayersp(p), drawspcard(p))
 
-        getplayer(p)?.closeInventory()
-        getplayer(getenemy(p))?.closeInventory()
+        if (getplayer(p) != null) getplayer(p)?.closeInventory()
+        if (getplayer(getenemy(p)) != null) getplayer(getenemy(p))?.closeInventory()
 
         if (getplayer(p)?.inventory?.itemInMainHand?.type != Material.AIR) getplayer(p)?.location?.let {
             getplayer(p)?.inventory?.itemInMainHand?.let { it1 ->
