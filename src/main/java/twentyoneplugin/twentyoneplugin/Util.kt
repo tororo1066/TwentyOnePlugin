@@ -30,8 +30,6 @@ object Util {
         return
     }
 
-
-
     fun UUID.sendmsg(s : String){
         getplayer(this)?.sendmsg(s)
     }

@@ -491,7 +491,6 @@ object Inventory {
     }
 
 
-
     fun spuse(p: UUID, item: ItemStack, slot: Int){
 
         when(getnbt(item,"sp")){

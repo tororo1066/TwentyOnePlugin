@@ -129,7 +129,6 @@ clocktime: 30 #時計の時間
 firstbet: 2 #初期ベッド
 spdrawchance: 10.0 #100が最大
 
-
 switch:
   savemode: false
   mode: true

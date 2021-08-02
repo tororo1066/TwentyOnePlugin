@@ -30,6 +30,7 @@ import java.util.*
 import kotlin.random.Random
 import kotlin.random.nextInt
 
+
 class TwentyOne(private val player : UUID) : Thread(){
 
 

@@ -43,6 +43,7 @@ class PlayerData{
     }
 }
 
+
 class TOP : JavaPlugin() {
 
     var mode by Delegates.notNull<Boolean>()
