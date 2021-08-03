@@ -44,20 +44,21 @@ class TwentyOne(private val player : UUID) : Thread(){
             }
             if (i == 0){
                 Bukkit.broadcast(Component.text("§l${getplayer(player)?.name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
+                vault.deposit(player,getdata(player).tip * getdata(player).tipcoin)
                 datamap.remove(player)
+                canjoin.remove(player)
                 return
             }
-            if (i % 10 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
-                    "§f/21 join ${getplayer(player)?.name} §4最低必須金額 ${getdata(player).tip * plugin.config.getInt("tipcoin")}","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
+            if (i % 20 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
+                    "§f/21 join ${getplayer(player)?.name} §4最低必須金額 ${getdata(player).tip * getdata(player).tipcoin}\n" +
+                    "§b部屋設定 Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
                 ,Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
 
-        vault.withdraw(player, getdata(player).tip * plugin.config.getInt("tipcoin"))
-        vault.withdraw(getdata(player).enemy, getdata(player).tip * plugin.config.getInt("tipcoin"))
 
         var firstturn = player
-        for (loops in 1..plugin.config.getInt("round")){
+        for (loops in 1..getdata(player).round){
             val startplayer = player
             val joinplayer = getdata(player).enemy
             val startinv = getinv(startplayer)
@@ -116,7 +117,7 @@ class TwentyOne(private val player : UUID) : Thread(){
 
 
             while (!getdata(startplayer).through || !getdata(joinplayer).through){
-                for (i in plugin.config.getInt("clocktime")*20 downTo 0){
+                for (i in getdata(player).clocktime*20 downTo 0){
                     if (getdata(first).action != ""){
                         when(getdata(first).action){
                             "spuse"->break
@@ -174,7 +175,7 @@ class TwentyOne(private val player : UUID) : Thread(){
 
             if (!gamelatersetting(player,gameend))break
 
-            if (plugin.config.getInt("round") != loops){
+            if (getdata(player).round != loops){
                 val spsave = ArrayList<ItemStack>()
                 val spsave2 = ArrayList<ItemStack>()
                 var wi = 36
@@ -210,15 +211,16 @@ class TwentyOne(private val player : UUID) : Thread(){
         })
 
         allplayersend(player,"§5===============結果===============")
-        allplayersend(player,"§e${getdata(player).name}：${getdata(player).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
-        allplayersend(player,"§e${getdata(getenemy(player)).name}：${getdata(getdata(player).enemy).tipcoin}/${plugin.config.getInt("tipcoin")}枚")
+        allplayersend(player,"§e${getdata(player).name}：${getdata(player).tipcoin}/${getdata(player).settipcoin}枚")
+        allplayersend(player,"§e${getdata(getenemy(player)).name}：${getdata(getdata(player).enemy).tipcoin}/${getdata(
+            getenemy(player)).settipcoin}枚")
         allplayersend(player,"§5===============結果===============")
 
         vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)
         vault.deposit(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
 
         val mysql = MySQLManager(plugin,"save21log")
-        mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getplayer(player)?.name}', '${getplayer(getdata(player).enemy)?.name}', ${getdata(player).tip}, ${plugin.config.getInt("tipcoin")}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
         datamap.remove(getenemy(player))
         datamap.remove(player)

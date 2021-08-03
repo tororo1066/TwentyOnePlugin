@@ -1,16 +1,13 @@
 package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
-import org.bukkit.*
-import org.bukkit.entity.EntityType
-import org.bukkit.entity.Firework
+import org.bukkit.Bukkit
+import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.FireworkMeta
-import org.bukkit.util.Vector
 import org.checkerframework.checker.nullness.qual.NonNull
 import org.jetbrains.annotations.Nullable
 import twentyoneplugin.twentyoneplugin.Inventory.countcard
@@ -19,7 +16,6 @@ import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.intrangeitem
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import java.util.*
-import kotlin.random.Random
 
 object Util {
     private val datamap = TOP.datamap
@@ -132,7 +128,7 @@ object Util {
         getdata(p).death = false
         getdata(getenemy(p)).death = false
         getdata(p).through = false
-        getdata(getdata(p).enemy).through = false
+        getdata(getenemy(p)).through = false
         getdata(p).spuse = true
         getdata(getenemy(p)).spuse = true
         getdata(p).harvest = false

@@ -15,7 +15,6 @@ import twentyoneplugin.twentyoneplugin.Util.hokancmd
 import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
 import java.util.*
-import kotlin.properties.Delegates
 
 
 class PlayerData{
@@ -32,14 +31,30 @@ class PlayerData{
     var harvest = false
     var death = false
 
+    var round = plugin.config.getInt("round")
+    var firstbet = plugin.config.getInt("firstbet")
+    var clocktime = plugin.config.getInt("clocktime")
+    var settipcoin = plugin.config.getInt("tipcoin")
+
     fun tipset(tipdouble : Double){
         tip = tipdouble
     }
 
-    fun dataset(player : Player, enemyplayer : Player){
+    fun nameset(player : Player, enemyplayer : Player){
         enemy = enemyplayer.uniqueId
         name = player.name
+    }
+
+    fun dataset(player : Player, enemyplayer : Player){
         inv = invsetup(player.uniqueId,enemyplayer.uniqueId)
+    }
+
+    fun gamedataset(r : Int, fb : Int, ct : Int, tc : Int){
+        round = r
+        firstbet = fb
+        clocktime = ct
+        tipcoin = tc
+        settipcoin = tc
     }
 }
 
@@ -117,36 +132,81 @@ class TOP : JavaPlugin() {
         }
         when (args[0]) {
             "start" -> {
-                if (args.size != 2) {
-                    sender.sendmsg("§4引数が不正です")
-                    return true
-                }
-                if (args[1].toDoubleOrNull() == null) {
-                    sender.sendmsg("/21 start [掛け金]")
-                    return true
-                }
-                if (datamap.containsKey(sender.uniqueId)) {
-                    sender.sendmsg("§4ゲームに参加中です")
-                    return true
-                }
-                datamap[sender.uniqueId] = PlayerData()
-                canjoin.add(sender.uniqueId)
-                datamap[sender.uniqueId]?.tipset(args[1].toDouble())
+                if (args.size == 6) {
+                    args[2].toIntOrNull()?:return true
+                    args[3].toIntOrNull()?:return true
+                    args[4].toIntOrNull()?:return true
+                    args[5].toIntOrNull()?:return true
+                    if (args[1].toDoubleOrNull() == null || args[2].toInt() !in 1..10 || args[3].toInt() !in 10..30 || args[4].toInt() !in 1..10 || args[5].toInt() !in 10..60) {
+                        sender.sendmsg("/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]")
+                        return true
+                    }
+                    if (datamap.containsKey(sender.uniqueId)) {
+                        sender.sendmsg("§4ゲームに参加中です")
+                        return true
+                    }
+                    if (args[1].toDouble() * args[3].toInt() > vault.getBalance(sender.uniqueId)){
+                        sender.sendmsg("§4金額が足りません\n必要金額：${args[1].toDouble() * args[3].toInt()}")
+                        return true
+                    }
 
-                Bukkit.broadcast(
-                    runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                            "§f/21 join ${sender.name} §4最低必須金額 ${
-                                Util.getdata(sender.uniqueId).tip * plugin.config.getInt(
-                                    "tipcoin"
-                                )
-                            }","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
-                )
-                TwentyOne(sender.uniqueId).start()
+                    vault.withdraw(sender.uniqueId, args[1].toDouble() * args[3].toInt())
+                    datamap[sender.uniqueId] = PlayerData()
+                    canjoin.add(sender.uniqueId)
+                    datamap[sender.uniqueId]?.tipset(args[1].toDouble())
+                    datamap[sender.uniqueId]?.gamedataset(args[2].toInt(),args[4].toInt(),args[5].toInt(),args[3].toInt())
+
+                    Bukkit.broadcast(
+                        runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
+                                "§f/21 join ${sender.name} §4最低必須金額 ${
+                                    getdata(sender.uniqueId).tip * args[3].toInt()
+                                }\n" +
+                                "§b部屋設定 Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                    )
+                    TwentyOne(sender.uniqueId).start()
+
+                }else{
+                    if (args.size == 2){
+                        if (args[1].toDoubleOrNull() == null) {
+                            sender.sendmsg("/21 start [1枚当たりの掛け金]")
+                            return true
+                        }
+                        if (datamap.containsKey(sender.uniqueId)) {
+                            sender.sendmsg("§4ゲームに参加中です")
+                            return true
+                        }
+                        if (args[1].toDouble() * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
+                            sender.sendmsg("§4金額が足りません\n必要金額：${args[1].toDouble() * plugin.config.getInt("tipcoin")}")
+                            return true
+                        }
+
+                        vault.withdraw(sender.uniqueId, args[1].toDouble() * plugin.config.getInt("tipcoin"))
+                        datamap[sender.uniqueId] = PlayerData()
+                        canjoin.add(sender.uniqueId)
+                        datamap[sender.uniqueId]?.tipset(args[1].toDouble())
+
+
+                        Bukkit.broadcast(
+                            runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
+                                    "§f/21 join ${sender.name} §4最低必須金額 ${
+                                        getdata(sender.uniqueId).tip * plugin.config.getInt(
+                                            "tipcoin"
+                                        )
+                                    }\n" +
+                                    "§b部屋設定 Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                        )
+                        TwentyOne(sender.uniqueId).start()
+                    }else{
+                        sender.sendmsg("§/21 start [1枚当たりの掛け金]")
+                        return true
+                    }
+                }
+
             }
 
             "join" -> {
                 if (args.size != 2) {
-                    sender.sendmsg("§4引数が不正です")
+                    sender.sendmsg("/21 join [プレイヤーの名前]")
                     return true
                 }
                 if (datamap.containsKey(sender.uniqueId)) {
@@ -154,7 +214,7 @@ class TOP : JavaPlugin() {
                     return true
                 }
                 val p = Bukkit.getPlayer(args[1])
-                if (p == null || !p.isOnline) {
+                if (p == null) {
                     sender.sendmsg("§4プレイヤーが存在しない、またはオフラインです")
                     return true
                 }
@@ -162,16 +222,21 @@ class TOP : JavaPlugin() {
                     sender.sendmsg("§4ゲームが存在しません")
                     return true
                 }
-                if (getdata(p.uniqueId).tip > vault.getBalance(sender.uniqueId)){
+                if (getdata(p.uniqueId).tip * getdata(p.uniqueId).tipcoin > vault.getBalance(sender.uniqueId)){
                     sender.sendmsg("§4所持金が不足しています")
                     return true
                 }
                 canjoin.remove(p.uniqueId)
 
+                vault.withdraw(sender.uniqueId, getdata(p.uniqueId).tip * getdata(p.uniqueId).tipcoin)
                 datamap[sender.uniqueId] = PlayerData()
+                datamap[sender.uniqueId]?.tipset(getdata(p.uniqueId).tip)
+                datamap[sender.uniqueId]?.gamedataset(getdata(p.uniqueId).round, getdata(p.uniqueId).firstbet,getdata(p.uniqueId).clocktime,getdata(p.uniqueId).tipcoin)
+                datamap[sender.uniqueId]?.nameset(sender,p)
+                datamap[p.uniqueId]?.nameset(p,sender)
                 datamap[p.uniqueId]?.dataset(p, sender)
                 datamap[sender.uniqueId]?.dataset(sender, p)
-                datamap[sender.uniqueId]?.tipset(getdata(p.uniqueId).tip)
+
                 return true
             }
 
@@ -189,11 +254,12 @@ class TOP : JavaPlugin() {
             }
 
             "help" -> {
-                sender.sendMessage("§5==========TwentyOnePlugin(21)==========")
+                sender.sendMessage("§d===================TwentyOnePlugin(21)===================")
                 sender.sendMessage(hokancmd("§5/21 start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage(hokancmd("§5/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage("§5細かいルールを指定して部屋を作成します")
                 sender.sendMessage(hokancmd("§5/21 join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
                 sender.sendMessage(runcmd("§5/21 open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
-                sender.sendMessage("§5/21 rule 21のルールを確認できます")
                 if (sender.isOp || sender.hasPermission("21.switch")) {
                     sender.sendMessage(runcmd("§c/21 switch モードを切り替えます","/21 switch","§6またはここをクリック！"))
                     if (sender.isOp) {
@@ -201,11 +267,8 @@ class TOP : JavaPlugin() {
                     }
                     sender.sendMessage("§c赤はOP(21.switch)用のコマンドです")
                 }
-                sender.sendMessage("§5==========TwentyOnePlugin(21)==========")
+                sender.sendMessage("§d===================TwentyOnePlugin(21)==§lAuthor:tororo_1066")
                 return true
-
-            }
-            "rule" -> {
 
             }
 
@@ -214,8 +277,10 @@ class TOP : JavaPlugin() {
                     sender.sendmsg("§4あなたはこのコマンドを実行する権限がありません")
                     return true
                 }
+                mode = !config.getBoolean("switch.mode")
                 config.set("switch.mode", !config.getBoolean("switch.mode"))
                 saveConfig()
+
                 sender.sendmsg("§bmodeを§a${config.getBoolean("switch.mode")}§bに変更しました")
                 return true
             }
@@ -247,9 +312,13 @@ class TOP : JavaPlugin() {
             }
             if (args.size == 2){
                 when(args[0]){
-                    "start"-> return mutableListOf("0","100","10000")
+                    "start"-> return mutableListOf("0","100","1000","10000")
                 }
             }
+            if (args.size == 3 && args[0] == "start")return mutableListOf("round数(1~10)")
+            if (args.size == 4 && args[0] == "start")return mutableListOf("初期チップ数(10~30)")
+            if (args.size == 5 && args[0] == "start")return mutableListOf("初期ベット数(1~10)")
+            if (args.size == 6 && args[0] == "start")return mutableListOf("1ターンの時間(10~60)")
         }
 
         val list = mutableListOf<String>()

@@ -124,10 +124,10 @@ sp:
 
 
 tipcoin: 10 #初期チップ
-round: 5 #ラウンド数
+round: 3 #ラウンド数
 clocktime: 30 #時計の時間
 firstbet: 2 #初期ベッド
-spdrawchance: 10.0 #100が最大
+spdrawchance: 15.0 #100が最大
 
 switch:
   savemode: false

@@ -37,14 +37,14 @@ object Inventory {
             setnbt(item,"$loop",1)
         }
         inv.setItem(18,item)
-        inv.setItem(17, ItemStack(Material.CLOCK,plugin.config.getInt("clocktime")))
+        inv.setItem(17, ItemStack(Material.CLOCK, getdata(p).clocktime))
         getdata(p).bjnumber = 21
         getdata(enemy).bjnumber = 21
-        getdata(p).bet = plugin.config.getInt("firstbet")
-        getdata(enemy).bet = plugin.config.getInt("firstbet")
+        getdata(p).bet = getdata(p).firstbet
+        getdata(enemy).bet = getdata(p).firstbet
 
-        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getdata(p).name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(enemy).tipcoin}枚"))))
-        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getdata(getenemy(p)).name}の賭け数/チップ", mutableListOf(Component.text("§e${plugin.config.getInt("firstbet")}/${getdata(p).tipcoin}枚"))))
+        inv.setItem(26, createitem(Material.GOLD_NUGGET,"§c${getdata(getenemy(p)).name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).firstbet}/${getdata(enemy).tipcoin}枚"))))
+        inv.setItem(9, createitem(Material.GOLD_NUGGET,"§c${getdata(p).name}の賭け数/チップ", mutableListOf(Component.text("§e${getdata(p).firstbet}/${getdata(p).tipcoin}枚"))))
         return inv
     }
     //cccccccch
@@ -503,7 +503,7 @@ object Inventory {
             }
 
             2->{
-                if (checkenemycard(p) == 7){
+                if (checkenemycard(p) == 6){
                     p.sendmsg("§c相手のカードは1枚しかありません！")
                     return
                 }
@@ -722,7 +722,7 @@ object Inventory {
                     val card = drawcard(p,drawint)
                     inv.setItem(checkplayercard(p),card)
                     getinv(getdata(p).enemy).setItem(checkenemycard(getdata(p).enemy),card)
-                    allplayersend(p,"§d${getplayer(p)?.name}は${drawint}のカードを引いた")
+                    allplayersend(p,"§d${getdata(p).name}は${drawint}のカードを引いた")
                 }else{
                     allplayersend(p,"§b${drawint}は山札にないため、除外された")
                 }
@@ -742,7 +742,7 @@ object Inventory {
 
                 inv.clear(enemyslot)//アイテム削除
                 getinv(getenemy(p)).clear(enemymyslot)//アイテム(ry
-                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後にひいたカードは山札に戻された")
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の最後にひいたカードは山札に戻された")
 
             }
 
@@ -781,7 +781,7 @@ object Inventory {
                     }
                 }
 
-                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後に出したspカードは消えた")
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の最後に出したspカードは消えた")
                 inv.clear(enemyspslot)
                 getinv(getenemy(p)).clear(enemymyspslot)
             }
@@ -824,7 +824,7 @@ object Inventory {
                     getinv(getenemy(p)).clear(i)
                 }
 
-                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の出したspカードは消えた")
             }
 
             5->{//パーフェクトドロー
@@ -841,7 +841,7 @@ object Inventory {
                     inv.setItem(checkplayercard(p), card)
                     getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
                     allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
-                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    allplayersend(p,"§d${getdata(p).name}は${i}のカードを引いた")
                     break
                 }
             }
@@ -860,7 +860,7 @@ object Inventory {
                     inv.setItem(checkplayercard(p), card)
                     getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
                     allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
-                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    allplayersend(p,"§d${getdata(p).name}は${i}のカードを引いた")
                     break
                 }
 
@@ -884,7 +884,7 @@ object Inventory {
                     inv.setItem(checkplayercard(p), card)
                     getinv(getenemy(p)).setItem(checkenemycard(getenemy(p)),card)
                     allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
-                    allplayersend(p,"§d${getplayer(p)?.name}は${i}のカードを引いた")
+                    allplayersend(p,"§d${getdata(p).name}は${i}のカードを引いた")
                     break
                 }
 
@@ -917,6 +917,7 @@ object Inventory {
 
                 getdata(getenemy(p)).bet += getnbt(item,"betup")
                 betchange(getenemy(p))
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の賭け数が${getnbt(item,"betup")}増加した")
 
             }
 
@@ -934,7 +935,7 @@ object Inventory {
 
                 inv.clear(enemyslot)//アイテム削除
                 getinv(getenemy(p)).clear(enemymyslot)//アイテム(ry
-                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の最後にひいたカードは山札に戻された")
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の最後にひいたカードは山札に戻された")
 
 
                 val pslot = if (checkplayerspput(p) == -1) 20 else checkplayerspput(p)
@@ -1025,7 +1026,7 @@ object Inventory {
                 getinv(p).setItem(checkplayerspput(p),item)
                 getinv(getenemy(p)).setItem(checkenemyspput(getenemy(p)),item)
                 allplaysound(Sound.ENTITY_GENERIC_EXPLODE,p)
-                allplayersend(p,"§d${getplayer(getenemy(p))?.name}の出したspカードは消えた")
+                allplayersend(p,"§d${getdata(getenemy(p)).name}の出したspカードは消えた")
 
                 getdata(getenemy(p)).spuse = false
 
@@ -1045,7 +1046,7 @@ object Inventory {
                         val card = drawcard(getenemy(p),int)
                         getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
                         inv.setItem(checkenemycard(p),card)
-                        allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${int}のカードを引いた")
+                        allplayersend(p,"§d${getdata(getenemy(p)).name}は${int}のカードを引いた")
                         allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
                         break
                     }
@@ -1059,7 +1060,7 @@ object Inventory {
                         val card = drawcard(getenemy(p),i)
                         getinv(getenemy(p)).setItem(checkplayercard(getenemy(p)), card)
                         inv.setItem(checkenemycard(p),card)
-                        allplayersend(p,"§d${getplayer(getenemy(p))?.name}は${i}のカードを引いた")
+                        allplayersend(p,"§d${getdata(getenemy(p)).name}は${i}のカードを引いた")
                         allplaysound(Sound.ENTITY_SHEEP_AMBIENT,p)
                         break
                     }
@@ -1092,7 +1093,7 @@ object Inventory {
                 getinv(getenemy(p)).setItem(enemymyslot,item1)
                 getinv(getenemy(p)).setItem(enemysslot,item2)
                 allplaysound(Sound.BLOCK_BEACON_ACTIVATE,p)
-                allplayersend(p,"§d最後にひいたカードを入れ替えた")
+                allplayersend(p,"§d最後にひいたカードを入れ替わった")
             }
 
             19,20,21->{//ゴール17,24,27  //15..11
@@ -1144,7 +1145,7 @@ object Inventory {
                 getdata(getenemy(p)).death = true
                 betchange(getenemy(p))
                 betchange(p)
-                allplayersend(p,"§d互いの賭け数が100になり、${getplayer(getenemy(p))?.name}はカードを引けなくなった")
+                allplayersend(p,"§d互いの賭け数が100になり、${getdata(getenemy(p)).name}はカードを引けなくなった")
             }
 
 
