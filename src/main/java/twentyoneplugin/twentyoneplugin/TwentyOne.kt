@@ -216,8 +216,8 @@ class TwentyOne(private val player : UUID) : Thread(){
             getenemy(player)).settipcoin}枚")
         allplayersend(player,"§5===============結果===============")
 
-        vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)
-        vault.deposit(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
+        if (getplayer(player) != null) vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)
+        if (getplayer(getenemy(player)) != null) vault.deposit(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
 
         val mysql = MySQLManager(plugin,"save21log")
         mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
