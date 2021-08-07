@@ -452,7 +452,7 @@ object Inventory {
                     Component.text("§e場に置かれている間、勝利条件を24にする。"),
                     Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
                     spcards[sprandom]!!)
-                setnbt(item,"sp",19)
+                setnbt(item,"sp",20)
                 setnbt(item,"goal",24)
                 return item
             }
@@ -462,7 +462,7 @@ object Inventory {
                     Component.text("§e場に置かれている間、勝利条件を27にする。"),
                     Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
                     spcards[sprandom]!!)
-                setnbt(item,"sp",19)
+                setnbt(item,"sp",21)
                 setnbt(item,"goal",27)
                 return item
             }
@@ -581,7 +581,7 @@ object Inventory {
                         Component.text("§e自分のSPカードをランダムで2枚捨てる。"),
                         Component.text("§eさらにSPカードを3枚引く。")),
                         spcards[13]!!)
-                    setnbt(item,"sp",13)
+                    setnbt(returnitem,"sp",13)
                     getinv(p).setItem(checkplayersp(p),returnitem)
                     return
                 }
@@ -596,7 +596,7 @@ object Inventory {
                         Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
                         Component.text("§eさらにSPカードを3枚引く。")),
                         spcards[14]!!)
-                    setnbt(item,"sp",14)
+                    setnbt(returnitem,"sp",14)
                     getinv(p).setItem(checkplayersp(p),returnitem)
                     return
                 }

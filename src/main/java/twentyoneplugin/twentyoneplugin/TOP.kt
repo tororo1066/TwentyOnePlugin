@@ -133,11 +133,14 @@ class TOP : JavaPlugin() {
         when (args[0]) {
             "start" -> {
                 if (args.size == 6) {
-                    args[2].toIntOrNull()?:return true
-                    args[3].toIntOrNull()?:return true
-                    args[4].toIntOrNull()?:return true
-                    args[5].toIntOrNull()?:return true
-                    if (args[1].toDoubleOrNull() == null || args[2].toInt() !in 1..10 || args[3].toInt() !in 10..30 || args[4].toInt() !in 1..10 || args[5].toInt() !in 10..60) {
+
+                    val money = args[1].toDoubleOrNull()?:return true
+                    val round = args[2].toIntOrNull()?:return true
+                    val tip = args[3].toIntOrNull()?:return true
+                    val bet = args[4].toIntOrNull()?:return true
+                    val clocktime = args[5].toIntOrNull()?:return true
+
+                    if (round !in 1..10 || tip !in 10..30 || bet !in 1..10 || clocktime !in 10..60) {
                         sender.sendmsg("/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]")
                         return true
                     }
@@ -145,16 +148,16 @@ class TOP : JavaPlugin() {
                         sender.sendmsg("§4ゲームに参加中です")
                         return true
                     }
-                    if (args[1].toDouble() * args[3].toInt() > vault.getBalance(sender.uniqueId)){
-                        sender.sendmsg("§4金額が足りません\n必要金額：${args[1].toDouble() * args[3].toInt()}")
+                    if (money * tip > vault.getBalance(sender.uniqueId)){
+                        sender.sendmsg("§4金額が足りません\n必要金額：${money * tip}")
                         return true
                     }
 
-                    vault.withdraw(sender.uniqueId, args[1].toDouble() * args[3].toInt())
+                    vault.withdraw(sender.uniqueId, money * tip)
                     datamap[sender.uniqueId] = PlayerData()
                     canjoin.add(sender.uniqueId)
-                    datamap[sender.uniqueId]?.tipset(args[1].toDouble())
-                    datamap[sender.uniqueId]?.gamedataset(args[2].toInt(),args[4].toInt(),args[5].toInt(),args[3].toInt())
+                    datamap[sender.uniqueId]?.tipset(money)
+                    datamap[sender.uniqueId]?.gamedataset(round,bet,clocktime,tip)
 
                     Bukkit.broadcast(
                         runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
@@ -167,23 +170,22 @@ class TOP : JavaPlugin() {
 
                 }else{
                     if (args.size == 2){
-                        if (args[1].toDoubleOrNull() == null) {
-                            sender.sendmsg("/21 start [1枚当たりの掛け金]")
-                            return true
-                        }
+
+                        val money = args[1].toDoubleOrNull()?:return true
+
                         if (datamap.containsKey(sender.uniqueId)) {
                             sender.sendmsg("§4ゲームに参加中です")
                             return true
                         }
-                        if (args[1].toDouble() * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
-                            sender.sendmsg("§4金額が足りません\n必要金額：${args[1].toDouble() * plugin.config.getInt("tipcoin")}")
+                        if (money * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
+                            sender.sendmsg("§4金額が足りません\n必要金額：${money * plugin.config.getInt("tipcoin")}")
                             return true
                         }
 
-                        vault.withdraw(sender.uniqueId, args[1].toDouble() * plugin.config.getInt("tipcoin"))
+                        vault.withdraw(sender.uniqueId, money * plugin.config.getInt("tipcoin"))
                         datamap[sender.uniqueId] = PlayerData()
                         canjoin.add(sender.uniqueId)
-                        datamap[sender.uniqueId]?.tipset(args[1].toDouble())
+                        datamap[sender.uniqueId]?.tipset(money)
 
 
                         Bukkit.broadcast(
@@ -255,11 +257,11 @@ class TOP : JavaPlugin() {
 
             "help" -> {
                 sender.sendMessage("§d===================TwentyOnePlugin(21)===================")
-                sender.sendMessage(hokancmd("§5/21 start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
-                sender.sendMessage(hokancmd("§5/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]","/21 start ","§6またはここをクリック！"))
-                sender.sendMessage("§5細かいルールを指定して部屋を作成します")
-                sender.sendMessage(hokancmd("§5/21 join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
-                sender.sendMessage(runcmd("§5/21 open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
+                sender.sendMessage(hokancmd("§b/21 start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage(hokancmd("§b/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage("§b細かいルールを指定して部屋を作成します")
+                sender.sendMessage(hokancmd("§b/21 join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
+                sender.sendMessage(runcmd("§b/21 open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
                 if (sender.isOp || sender.hasPermission("21.switch")) {
                     sender.sendMessage(runcmd("§c/21 switch モードを切り替えます","/21 switch","§6またはここをクリック！"))
                     if (sender.isOp) {
