@@ -1,14 +1,18 @@
 package twentyoneplugin.twentyoneplugin
 
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.bukkit.NamespacedKey
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
+import twentyoneplugin.twentyoneplugin.Inventory.setnbt
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.hokancmd
@@ -95,7 +99,6 @@ class TOP : JavaPlugin() {
                 saveConfig()
             }
         }
-        mysql.close()
 
         plugin = this
         var int = 1
@@ -131,6 +134,7 @@ class TOP : JavaPlugin() {
             return true
         }
         when (args[0]) {
+
             "start" -> {
                 if (args.size == 6) {
 
@@ -162,9 +166,9 @@ class TOP : JavaPlugin() {
                     Bukkit.broadcast(
                         runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
                                 "§f/21 join ${sender.name} §4最低必須金額 ${
-                                    getdata(sender.uniqueId).tip * args[3].toInt()
+                                    getdata(sender.uniqueId).tip * tip
                                 }\n" +
-                                "§b部屋設定 Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                "§b部屋設定 1チップ当たりの金額:${money}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
 
@@ -195,7 +199,7 @@ class TOP : JavaPlugin() {
                                             "tipcoin"
                                         )
                                     }\n" +
-                                    "§b部屋設定 Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                    "§b部屋設定 1チップ当たりの金額:${getdata(sender.uniqueId).tip}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                         )
                         TwentyOne(sender.uniqueId).start()
                     }else{
@@ -238,6 +242,8 @@ class TOP : JavaPlugin() {
                 datamap[p.uniqueId]?.nameset(p,sender)
                 datamap[p.uniqueId]?.dataset(p, sender)
                 datamap[sender.uniqueId]?.dataset(sender, p)
+                sender.gameMode = GameMode.SURVIVAL
+                p.gameMode = GameMode.SURVIVAL
 
                 return true
             }

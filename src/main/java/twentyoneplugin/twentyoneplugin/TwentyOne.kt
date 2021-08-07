@@ -2,9 +2,11 @@ package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.NamespacedKey
 import org.bukkit.Server
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import twentyoneplugin.twentyoneplugin.Inventory.checkplayersp
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
@@ -51,7 +53,7 @@ class TwentyOne(private val player : UUID) : Thread(){
             }
             if (i % 20 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
                     "§f/21 join ${getplayer(player)?.name} §4最低必須金額 ${getdata(player).tip * getdata(player).tipcoin}\n" +
-                    "§b部屋設定 Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
+                    "§b部屋設定 1チップ当たりの金額:${getdata(player).tip}円、Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
                 ,Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
@@ -222,8 +224,36 @@ class TwentyOne(private val player : UUID) : Thread(){
         val mysql = MySQLManager(plugin,"save21log")
         mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
+
+        val playerinv = getplayer(player)?.inventory
+        val enemyinv = getplayer(getenemy(player))?.inventory
+
+        if (playerinv != null){
+            for (content in playerinv.contents){
+                if (content == null)continue
+                if (content.itemMeta.persistentDataContainer.has(NamespacedKey(plugin,"sp"),
+                        PersistentDataType.INTEGER)){
+                    playerinv.remove(content)
+                }
+            }
+        }
+
+        if (enemyinv != null){
+            for (content in enemyinv.contents){
+                if (content == null)continue
+                if (content.itemMeta.persistentDataContainer.has(NamespacedKey(plugin,"sp"),
+                        PersistentDataType.INTEGER)) {
+                    enemyinv.remove(content)
+                }
+            }
+        }
+
+
         datamap.remove(getenemy(player))
         datamap.remove(player)
+
+
+
 
         return
     }
