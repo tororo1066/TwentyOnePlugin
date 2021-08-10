@@ -2,23 +2,21 @@ package twentyoneplugin.twentyoneplugin
 
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
-import org.bukkit.NamespacedKey
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
-import twentyoneplugin.twentyoneplugin.Inventory.setnbt
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.hokancmd
 import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 
 class PlayerData{
@@ -116,8 +114,8 @@ class TOP : JavaPlugin() {
     companion object{
         lateinit var vault : VaultManager
         const val prefix = "§5§l[21]§r"
-        val datamap = HashMap<UUID,PlayerData>()
-        val spcards = HashMap<Int,Int>()
+        val datamap = ConcurrentHashMap<UUID,PlayerData>()
+        val spcards = ConcurrentHashMap<Int,Int>()
         val cardcsm = ArrayList<Int>()
         val canjoin = ArrayList<UUID>()
         lateinit var plugin : TOP
@@ -156,7 +154,6 @@ class TOP : JavaPlugin() {
                         sender.sendmsg("§4金額が足りません\n必要金額：${money * tip}")
                         return true
                     }
-
                     vault.withdraw(sender.uniqueId, money * tip)
                     datamap[sender.uniqueId] = PlayerData()
                     canjoin.add(sender.uniqueId)
@@ -185,7 +182,6 @@ class TOP : JavaPlugin() {
                             sender.sendmsg("§4金額が足りません\n必要金額：${money * plugin.config.getInt("tipcoin")}")
                             return true
                         }
-
                         vault.withdraw(sender.uniqueId, money * plugin.config.getInt("tipcoin"))
                         datamap[sender.uniqueId] = PlayerData()
                         canjoin.add(sender.uniqueId)

@@ -59,16 +59,22 @@ class TwentyOne(private val player : UUID) : Thread(){
         }
 
 
+        val startplayer = player
+        val joinplayer = getdata(player).enemy
+
         var firstturn = player
         for (loops in 1..getdata(player).round){
-            val startplayer = player
-            val joinplayer = getdata(player).enemy
+
             val startinv = getinv(startplayer)
             val joininv = getinv(joinplayer)
             Bukkit.getScheduler().runTask(plugin, Runnable {
                 getplayer(player)?.openInventory(startinv)
                 getplayer(getdata(player).enemy)?.openInventory(joininv)
             })
+            if (loops == 1){
+                startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
+                joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(joinplayer))
+            }
             startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
             joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(joinplayer))
             allplaysound(Sound.BLOCK_ANVIL_PLACE, startplayer)
@@ -206,11 +212,14 @@ class TwentyOne(private val player : UUID) : Thread(){
 
         }
 
+
         Bukkit.getScheduler().runTask(plugin, Runnable {
             if (getplayer(player) != null) getplayer(player)?.closeInventory()
             if (getplayer(getenemy(player)) != null) getplayer(getenemy(player))?.closeInventory()
             return@Runnable
         })
+
+
 
         allplayersend(player,"§5===============結果===============")
         allplayersend(player,"§e${getdata(player).name}：${getdata(player).tipcoin}/${getdata(player).settipcoin}枚")
@@ -247,7 +256,6 @@ class TwentyOne(private val player : UUID) : Thread(){
                 }
             }
         }
-
 
         datamap.remove(getenemy(player))
         datamap.remove(player)
