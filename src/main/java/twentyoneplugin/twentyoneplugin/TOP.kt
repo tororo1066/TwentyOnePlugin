@@ -278,7 +278,7 @@ class TOP : JavaPlugin() {
                     }
                     sender.sendMessage("§c赤はOP(21.switch)用のコマンドです")
                 }
-                sender.sendMessage("§d===================TwentyOnePlugin(21)==§lAuthor:tororo_1066")
+                sender.sendMessage("§dVersion:2.0=======TwentyOnePlugin(21)==§lAuthor:tororo_1066")
                 return true
 
             }

@@ -41,8 +41,13 @@ object Util {
         return Math.random() <= i/100
     }
 
+    private fun clocksound(uuid: UUID){
+        getplayer(uuid)?.location?.let { getplayer(uuid)?.playSound(it,Sound.BLOCK_STONE_BUTTON_CLICK_ON,2f,2f) }
+        getplayer(getenemy(uuid))?.location?.let { getplayer(getenemy(uuid))?.playSound(it,Sound.BLOCK_STONE_BUTTON_CLICK_ON,2f,2f) }
+    }
+
     fun Player.playsound(sound : Sound){
-        this.playSound(this.location,sound,3f,1f)
+        this.playSound(this.location,sound,2f,1f)
         return
     }
 
@@ -82,7 +87,7 @@ object Util {
         if (inv.getItem(17) == null)return false
         inv.setItem(17, ItemStack(Material.CLOCK,time))
         eninv.setItem(17, ItemStack(Material.CLOCK,time))
-        allplaysound(Sound.BLOCK_STONE_BUTTON_CLICK_ON,p)
+        clocksound(p)
         if (inv.getItem(17)?.amount == 1)return false
         return true
     }
