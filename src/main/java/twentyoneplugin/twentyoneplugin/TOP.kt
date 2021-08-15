@@ -2,6 +2,7 @@ package twentyoneplugin.twentyoneplugin
 
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -109,6 +110,10 @@ class TOP : JavaPlugin() {
         for (l in config.getIntegerList("cardcsm")){
             cardcsm.add(l)
         }
+
+        cardmaterial = config.getString("cardmaterial")?.let { Material.valueOf(it) }!!
+        spcardmaterial = Material.valueOf(config.getString("spcardmaterial")!!)
+        invisiblecardcsm = config.getInt("invisiblecardcsm")
     }
 
     companion object{
@@ -118,6 +123,9 @@ class TOP : JavaPlugin() {
         val spcards = ConcurrentHashMap<Int,Int>()
         val cardcsm = ArrayList<Int>()
         val canjoin = ArrayList<UUID>()
+        var cardmaterial = Material.PAPER
+        var spcardmaterial = Material.PAPER
+        var invisiblecardcsm = 0
         lateinit var plugin : TOP
     }
 
@@ -132,7 +140,6 @@ class TOP : JavaPlugin() {
             return true
         }
         when (args[0]) {
-
             "start" -> {
                 if (args.size == 6) {
 

@@ -5,6 +5,10 @@ mysql: # DB
   port: 3306
   db: 21
 
+cardmaterial: PAPER
+spcardmaterial: PAPER
+invisiblecardcsm: 0
+
 cardcsm: # ノーマルカードのtex
   - 1
   - 2

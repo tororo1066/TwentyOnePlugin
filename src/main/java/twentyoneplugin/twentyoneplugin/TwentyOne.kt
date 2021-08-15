@@ -2,11 +2,9 @@ package twentyoneplugin.twentyoneplugin
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.NamespacedKey
 import org.bukkit.Server
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataType
 import twentyoneplugin.twentyoneplugin.Inventory.checkplayersp
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
@@ -234,34 +232,8 @@ class TwentyOne(private val player : UUID) : Thread(){
         mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
 
-        val playerinv = getplayer(player)?.inventory
-        val enemyinv = getplayer(getenemy(player))?.inventory
-
-        if (playerinv != null){
-            for (content in playerinv.contents){
-                if (content == null)continue
-                if (content.itemMeta.persistentDataContainer.has(NamespacedKey(plugin,"sp"),
-                        PersistentDataType.INTEGER)){
-                    playerinv.remove(content)
-                }
-            }
-        }
-
-        if (enemyinv != null){
-            for (content in enemyinv.contents){
-                if (content == null)continue
-                if (content.itemMeta.persistentDataContainer.has(NamespacedKey(plugin,"sp"),
-                        PersistentDataType.INTEGER)) {
-                    enemyinv.remove(content)
-                }
-            }
-        }
-
         datamap.remove(getenemy(player))
         datamap.remove(player)
-
-
-
 
         return
     }

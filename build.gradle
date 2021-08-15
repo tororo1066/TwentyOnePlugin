@@ -16,6 +16,7 @@ repositories {
         name = 'sonatype'
         url = 'https://oss.sonatype.org/content/groups/public/'
     }
+    maven { url "https://repo.dmulloy2.net/repository/public/" }
 }
 
 dependencies {
@@ -57,7 +58,6 @@ repositories {
 }
 dependencies {
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
-    compile fileTree(dir: 'libs', include: '*.jar')
 }
 
 jar {

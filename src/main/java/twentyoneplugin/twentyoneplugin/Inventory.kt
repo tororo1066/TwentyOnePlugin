@@ -10,7 +10,10 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
 import twentyoneplugin.twentyoneplugin.TOP.Companion.cardcsm
+import twentyoneplugin.twentyoneplugin.TOP.Companion.cardmaterial
+import twentyoneplugin.twentyoneplugin.TOP.Companion.invisiblecardcsm
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.TOP.Companion.spcardmaterial
 import twentyoneplugin.twentyoneplugin.TOP.Companion.spcards
 import twentyoneplugin.twentyoneplugin.Util.allplayersend
 import twentyoneplugin.twentyoneplugin.Util.allplaysound
@@ -272,7 +275,7 @@ object Inventory {
         when(val sprandom = spcards.keys.random()){
             1->{
                 val random = Random.nextInt(1..11)
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ドロー$random", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ドロー$random", mutableListOf(
                     Component.text("§e山札に残っている場合のみ、${random}のカードを引く。")) ,
                     plugin.config.getIntegerList("sp.1.drawcsm")[random-1])
                 setnbt(item,"sp",1)
@@ -281,7 +284,7 @@ object Inventory {
             }
 
             2->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6リムーブ",mutableListOf(
+                val item = createitem(spcardmaterial,"§6リムーブ",mutableListOf(
                     Component.text("§e相手が最後にひいたカードを山札に戻す。"),
                     Component.text("§e相手の残りのカードが一枚だと使えない。")),
                     spcards[sprandom]!!)
@@ -290,7 +293,7 @@ object Inventory {
             }
 
             3->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ", mutableListOf(
+                val item = createitem(spcardmaterial,"§6デストロイ", mutableListOf(
                     Component.text("§e相手が最後に場に置いたSPカードを取り除く。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",3)
@@ -298,7 +301,7 @@ object Inventory {
             }
 
             4->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ+", mutableListOf(
+                val item = createitem(spcardmaterial,"§6デストロイ+", mutableListOf(
                     Component.text("§e相手が場に置いた全てのSPカードを取り除く。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",4)
@@ -306,7 +309,7 @@ object Inventory {
             }
 
             5->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6パーフェクトドロー", mutableListOf(
+                val item = createitem(spcardmaterial,"§6パーフェクトドロー", mutableListOf(
                     Component.text("§e山札の中から、一番良い数字のカードを引く。"),
                     Component.text("§e適切なカードが見つからなければ引かない。")),
                     spcards[sprandom]!!)
@@ -316,7 +319,7 @@ object Inventory {
             }
 
             6->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6パーフェクトドロー+", mutableListOf(
+                val item = createitem(spcardmaterial,"§6パーフェクトドロー+", mutableListOf(
                     Component.text("§e山札の中から、一番良い数字のカードを引く。"),
                     Component.text("§e適切なカードが見つからなければ引かない。"),
                     Component.text("§eさらに場に置かれている間、相手の賭け数を5つ増やす。")),
@@ -327,7 +330,7 @@ object Inventory {
             }
 
             7->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6アルティメットドロー", mutableListOf(
+                val item = createitem(spcardmaterial,"§6アルティメットドロー", mutableListOf(
                     Component.text("§e山札の中から、一番良い数字のカードを引く。"),
                     Component.text("§e適切なカードが見つからなければ引かない。"),
                     Component.text("§eさらに、spカードを2枚引く。")),
@@ -338,7 +341,7 @@ object Inventory {
             }
 
             8->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ1", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ベットアップ1", mutableListOf(
                     Component.text("§eSPカードを1枚引く。"),
                     Component.text("§eさらに場に置かれている間、相手の賭け数を1つ増やす。")),
                     spcards[sprandom]!!)
@@ -348,7 +351,7 @@ object Inventory {
             }
 
             9->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ2", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ベットアップ2", mutableListOf(
                     Component.text("§eSPカードを1枚引く。"),
                     Component.text("§eさらに場に置かれている間、相手の賭け数を2つ増やす。")),
                     spcards[sprandom]!!)
@@ -358,7 +361,7 @@ object Inventory {
             }
 
             10->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ベットアップ2+", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ベットアップ2+", mutableListOf(
                     Component.text("§e相手の最後にひいたカードを山札に戻す。"),
                     Component.text("§eさらに場に置かれている間、相手の賭け数を2つ増やす。")),
                     spcards[sprandom]!!)
@@ -368,7 +371,7 @@ object Inventory {
             }
 
             11->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6シールド", mutableListOf(
+                val item = createitem(spcardmaterial,"§6シールド", mutableListOf(
                     Component.text("§e場に置かれている間、自分の賭け数を1つ減らす。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",11)
@@ -377,7 +380,7 @@ object Inventory {
             }
 
             12->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6シールド+", mutableListOf(
+                val item = createitem(spcardmaterial,"§6シールド+", mutableListOf(
                     Component.text("§e場に置かれている間、自分の賭け数を2つ減らす。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",12)
@@ -386,7 +389,7 @@ object Inventory {
             }
 
             13->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ", mutableListOf(
+                val item = createitem(spcardmaterial,"§6spチェンジ", mutableListOf(
                     Component.text("§e自分のSPカードをランダムで2枚捨てる。"),
                     Component.text("§eさらにSPカードを3枚引く。")),
                     spcards[sprandom]!!)
@@ -395,7 +398,7 @@ object Inventory {
             }
 
             14->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ+", mutableListOf(
+                val item = createitem(spcardmaterial,"§6spチェンジ+", mutableListOf(
                     Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
                     Component.text("§eさらにSPカードを3枚引く。")),
                     spcards[sprandom]!!)
@@ -404,7 +407,7 @@ object Inventory {
             }
 
             15->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デストロイ++", mutableListOf(
+                val item = createitem(spcardmaterial,"§6デストロイ++", mutableListOf(
                     Component.text("§e相手の場に出てるspカードを全て消す。"),
                     Component.text("§eさらに、場に置かれている間相手のspカードの仕様を封じる。")),
                     spcards[sprandom]!!)
@@ -413,7 +416,7 @@ object Inventory {
             }
 
             16->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ラブ・ユア・エネミー", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ラブ・ユア・エネミー", mutableListOf(
                     Component.text("§e相手は1枚カードを引く。"),
                     Component.text("§eそのカードの数字は、相手にとって一番良い数字が選ばれる。")),
                     spcards[sprandom]!!)
@@ -422,7 +425,7 @@ object Inventory {
             }
 
             17->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ハーヴェスト", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ハーヴェスト", mutableListOf(
                     Component.text("§e場に置かれている間、SPカードを使う度にSPカードを1枚引く。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",17)
@@ -430,7 +433,7 @@ object Inventory {
             }
 
             18->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6エクスチェンジ", mutableListOf(
+                val item = createitem(spcardmaterial,"§6エクスチェンジ", mutableListOf(
                     Component.text("§e両プレイヤーがそれぞれ最後に引いたカードを交換する。")),
                     spcards[sprandom]!!)
                 setnbt(item,"sp",18)
@@ -438,7 +441,7 @@ object Inventory {
             }
 
             19->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール17", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ゴール17", mutableListOf(
                     Component.text("§e場に置かれている間、勝利条件を17にする。"),
                     Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
                     spcards[sprandom]!!)
@@ -448,7 +451,7 @@ object Inventory {
             }
 
             20->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール24", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ゴール24", mutableListOf(
                     Component.text("§e場に置かれている間、勝利条件を24にする。"),
                     Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
                     spcards[sprandom]!!)
@@ -458,7 +461,7 @@ object Inventory {
             }
 
             21->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6ゴール27", mutableListOf(
+                val item = createitem(spcardmaterial,"§6ゴール27", mutableListOf(
                     Component.text("§e場に置かれている間、勝利条件を27にする。"),
                     Component.text("§e他の「ゴール」系カードが場にある場合、それを取り除く。")),
                     spcards[sprandom]!!)
@@ -469,7 +472,7 @@ object Inventory {
 
 
             22->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6リターン",mutableListOf(
+                val item = createitem(spcardmaterial,"§6リターン",mutableListOf(
                     Component.text("§e自分が最後にひいたカードを山札に戻す。"),
                     Component.text("§e自分の残りのカードが一枚だと使えない。")),
                     spcards[sprandom]!!)
@@ -478,7 +481,7 @@ object Inventory {
             }
 
             23->{
-                val item = createitem(Material.TOTEM_OF_UNDYING,"§6デスぺレーション",mutableListOf(
+                val item = createitem(spcardmaterial,"§6デスぺレーション",mutableListOf(
                     Component.text("§e場に置かれている間、互いの賭け数が100上がる。"),
                     Component.text("§eまた、相手はカードを引けない。")),
                     spcards[sprandom]!!)
@@ -577,7 +580,7 @@ object Inventory {
                 tumespcards(p)
                 if (checkplayersp(p) < 38 || checkplayersp(p) == -1){
                     p.sendmsg("§cspカードが2枚必要です！")
-                    val returnitem = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ", mutableListOf(
+                    val returnitem = createitem(spcardmaterial,"§6spチェンジ", mutableListOf(
                         Component.text("§e自分のSPカードをランダムで2枚捨てる。"),
                         Component.text("§eさらにSPカードを3枚引く。")),
                         spcards[13]!!)
@@ -592,7 +595,7 @@ object Inventory {
                 tumespcards(p)
                 if (checkplayersp(p) < 37 || checkplayersp(p) == -1){
                     p.sendmsg("§cspカードが1枚必要です！")
-                    val returnitem = createitem(Material.TOTEM_OF_UNDYING,"§6spチェンジ+", mutableListOf(
+                    val returnitem = createitem(spcardmaterial,"§6spチェンジ+", mutableListOf(
                         Component.text("§e自分のSPカードをランダムで1枚捨てる。"),
                         Component.text("§eさらにSPカードを3枚引く。")),
                         spcards[14]!!)
@@ -689,19 +692,8 @@ object Inventory {
         if (getplayer(p) != null) getplayer(p)?.closeInventory()
         if (getplayer(getenemy(p)) != null) getplayer(getenemy(p))?.closeInventory()
 
-        if (getplayer(p)?.inventory?.itemInMainHand?.type != Material.AIR) getplayer(p)?.location?.let {
-            getplayer(p)?.inventory?.itemInMainHand?.let { it1 ->
-                getplayer(p)?.location?.world?.dropItemNaturally(
-                    it, it1
-                )
-            }
-        }
-        if (getplayer(getenemy(p))?.inventory?.itemInMainHand?.type != Material.AIR) getplayer(getenemy(p))?.location?.world?.dropItemNaturally(getplayer(
-            getenemy(p))?.location!!, getplayer(getenemy(p))?.inventory?.itemInMainHand!!)
-        getplayer(p)?.inventory?.setItemInMainHand(item)
-        getplayer(getenemy(p))?.inventory?.setItemInMainHand(item)
-        getplayer(p)?.damage(999999.0)
-        getplayer(getenemy(p))?.damage(999999.0)
+        allplaysound(Sound.ITEM_TOTEM_USE,p)
+
         allplayersend(p,item.itemMeta.displayName)
         for (l in item.lore!!){
             allplayersend(p,l)
@@ -1160,7 +1152,7 @@ object Inventory {
     fun drawcard(p : UUID, invisible : Boolean) : ItemStack? {
         if (getdata(p).death)return null
         val cardnum = yamahudacheck(p)?.random()?:return null
-        val item = createitem(if (invisible) Material.BOOK else Material.PAPER,cardnum.toString(), cardcsm[cardnum-1])
+        val item = createitem(if (invisible) Material.BOOK else cardmaterial,cardnum.toString(), if (invisible) invisiblecardcsm else cardcsm[cardnum-1])
         setnbt(item,"cardnum",cardnum)
         setnbt(getinv(p).getItem(18)!!,"$cardnum",0)
         setnbt(getinv(getdata(p).enemy).getItem(18)!!,"$cardnum",0)
@@ -1168,7 +1160,7 @@ object Inventory {
     }
 
     fun drawcard(p : UUID, card : Int) : ItemStack {
-        val item = createitem(Material.PAPER,card.toString(), cardcsm[card-1])
+        val item = createitem(cardmaterial,card.toString(), cardcsm[card-1])
         setnbt(item,"cardnum",card)
         setnbt(getinv(p).getItem(18)!!,"$card",0)
         setnbt(getinv(getdata(p).enemy).getItem(18)!!,"$card",0)
