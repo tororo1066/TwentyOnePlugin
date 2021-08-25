@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
+import twentyoneplugin.twentyoneplugin.AdvancementUtils.Companion.awardAdvancement
 import twentyoneplugin.twentyoneplugin.TOP.Companion.cardcsm
 import twentyoneplugin.twentyoneplugin.TOP.Companion.cardmaterial
 import twentyoneplugin.twentyoneplugin.TOP.Companion.invisiblecardcsm
@@ -20,9 +21,14 @@ import twentyoneplugin.twentyoneplugin.Util.allplaysound
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getenemy
 import twentyoneplugin.twentyoneplugin.Util.getplayer
+import twentyoneplugin.twentyoneplugin.Util.isDone
 import twentyoneplugin.twentyoneplugin.Util.per
 import twentyoneplugin.twentyoneplugin.Util.playsound
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
+import twentyoneplugin.twentyoneplugin.advancements.DeathGame
+import twentyoneplugin.twentyoneplugin.advancements.JoinGame
+import twentyoneplugin.twentyoneplugin.advancements.LoginServer
+import twentyoneplugin.twentyoneplugin.advancements.UseSp
 import java.util.*
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -274,7 +280,7 @@ object Inventory {
 
         when(val sprandom = spcards.keys.random()){
             1->{
-                val random = Random.nextInt(1..11)
+                val random = Random.nextInt(3..7)
                 val item = createitem(spcardmaterial,"§6ドロー$random", mutableListOf(
                     Component.text("§e山札に残っている場合のみ、${random}のカードを引く。")) ,
                     plugin.config.getIntegerList("sp.1.drawcsm")[random-1])
@@ -683,6 +689,11 @@ object Inventory {
 
 
         }
+
+
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            if (getplayer(p)?.let { JoinGame.key.isDone(it) } == true) getplayer(p)?.awardAdvancement(UseSp.key)
+        })
 
         replaceaction(getinv(p))
         getinv(p).clear(slot)
@@ -1130,6 +1141,9 @@ object Inventory {
             }
 
             23->{
+                Bukkit.getScheduler().runTask(plugin, Runnable {
+                    if (getplayer(p)?.let { LoginServer.key.isDone(it) } == true) getplayer(p)?.awardAdvancement(DeathGame.key)
+                })
                 inv.setItem(checkplayerspput(p),item)
                 getinv(getenemy(p)).setItem(checkenemyspput(p),item)
                 getdata(getenemy(p)).bet += 100
@@ -1152,7 +1166,7 @@ object Inventory {
     fun drawcard(p : UUID, invisible : Boolean) : ItemStack? {
         if (getdata(p).death)return null
         val cardnum = yamahudacheck(p)?.random()?:return null
-        val item = createitem(if (invisible) Material.BOOK else cardmaterial,cardnum.toString(), if (invisible) invisiblecardcsm else cardcsm[cardnum-1])
+        val item = createitem(cardmaterial,cardnum.toString(), if (invisible) invisiblecardcsm else cardcsm[cardnum-1])
         setnbt(item,"cardnum",cardnum)
         setnbt(getinv(p).getItem(18)!!,"$cardnum",0)
         setnbt(getinv(getdata(p).enemy).getItem(18)!!,"$cardnum",0)

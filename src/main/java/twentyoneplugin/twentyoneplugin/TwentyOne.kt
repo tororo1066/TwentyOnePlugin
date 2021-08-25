@@ -5,6 +5,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Server
 import org.bukkit.Sound
 import org.bukkit.inventory.ItemStack
+import twentyoneplugin.twentyoneplugin.AdvancementUtils.Companion.awardAdvancement
 import twentyoneplugin.twentyoneplugin.Inventory.checkplayersp
 import twentyoneplugin.twentyoneplugin.Inventory.fillaction
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
@@ -23,9 +24,11 @@ import twentyoneplugin.twentyoneplugin.Util.gamelatersetting
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getenemy
 import twentyoneplugin.twentyoneplugin.Util.getplayer
+import twentyoneplugin.twentyoneplugin.Util.isDone
 import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.timecount
 import twentyoneplugin.twentyoneplugin.Util.win
+import twentyoneplugin.twentyoneplugin.advancements.*
 import java.util.*
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -179,7 +182,24 @@ class TwentyOne(private val player : UUID) : Thread(){
             val gameend = endtwoturn(player)
             if (gameend == null)draw(player) else if (gameend == true) win(player) else win(getenemy(player))
 
-            if (!gamelatersetting(player,gameend))break
+            if (!gamelatersetting(player,gameend)){
+                if (getdata(player).customsetting)break
+                Bukkit.getScheduler().runTask(plugin, Runnable {
+                    if (getdata(player).tipcoin == 0){
+                        if (getplayer(getenemy(player))?.let { Complete21.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(PerfectGame.key)
+                    }else{
+                        if (getplayer(player)?.let { Complete21.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(PerfectGame.key)
+                    }
+                    if (loops == 1){
+                        if (getdata(player).tipcoin == 0){
+                            if (getplayer(getenemy(player))?.let { PerfectGame.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(UltimateGame.key)
+                        }else{
+                            if (getplayer(player)?.let { PerfectGame.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(UltimateGame.key)
+                        }
+                    }
+                })
+                break
+            }
 
             if (getdata(player).round != loops){
                 val spsave = ArrayList<ItemStack>()
@@ -217,6 +237,8 @@ class TwentyOne(private val player : UUID) : Thread(){
             return@Runnable
         })
 
+        val tipcoin = getdata(player).tipcoin
+        val enemytipcoin = getdata(getenemy(player)).tipcoin
 
 
         allplayersend(player,"§5===============結果===============")
@@ -225,11 +247,36 @@ class TwentyOne(private val player : UUID) : Thread(){
             getenemy(player)).settipcoin}枚")
         allplayersend(player,"§5===============結果===============")
 
+        Bukkit.getScheduler().runTask(plugin, Runnable {
+            if (tipcoin != enemytipcoin){
+                if (tipcoin > enemytipcoin){
+                    if (getplayer(player)?.let { UseSp.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(WinGame.key)
+                }else{
+                    if (getplayer(getenemy(player))?.let { UseSp.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(WinGame.key)
+                }
+            }
+        })
+
         if (getplayer(player) != null) vault.deposit(player, getdata(player).tipcoin * getdata(player).tip)
         if (getplayer(getenemy(player)) != null) vault.deposit(getdata(player).enemy, getdata(getdata(player).enemy).tipcoin * getdata(getdata(player).enemy).tip)
 
         val mysql = MySQLManager(plugin,"save21log")
-        mysql.execute("INSERT INTO twentyoneDB VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+
+        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${player}';")
+        if (rs == null || !rs.next()){
+            mysql.execute("INSERT INTO twentyone_battle_log VALUES ('${player}', '${getdata(player).name}', ${if (tipcoin > enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin < enemytipcoin) 1 else 0});")
+        }else{
+            mysql.execute("UPDATE twentyone_battle_log SET ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${player}';")
+        }
+
+        val rs2 = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${getenemy(player)}';")
+        if (rs2 == null || !rs2.next()){
+            mysql.execute("INSERT INTO twentyone_battle_log VALUES ('${getenemy(player)}', '${getdata(getenemy(player)).name}', ${if (tipcoin > enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin < enemytipcoin) 1 else 0});")
+        }else{
+            mysql.execute("UPDATE twentyone_battle_log SET ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${getenemy(player)}';")
+        }
+
+        mysql.execute("INSERT INTO twentyone_log VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         mysql.close()
 
         datamap.remove(getenemy(player))

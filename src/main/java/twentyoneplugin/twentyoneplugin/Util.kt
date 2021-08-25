@@ -5,16 +5,22 @@ import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.Sound
+import org.bukkit.advancement.Advancement
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.checkerframework.checker.nullness.qual.NonNull
 import org.jetbrains.annotations.Nullable
+import twentyoneplugin.twentyoneplugin.AdvancementUtils.Companion.awardAdvancement
 import twentyoneplugin.twentyoneplugin.Inventory.countcard
 import twentyoneplugin.twentyoneplugin.Inventory.createitem
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.intrangeitem
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.advancements.Complete21
+import twentyoneplugin.twentyoneplugin.advancements.LoginServer
+import twentyoneplugin.twentyoneplugin.advancements.WinGame
 import java.util.*
 
 object Util {
@@ -78,6 +84,10 @@ object Util {
         return datamap[p]?.enemy!!
     }
 
+    fun NamespacedKey.isDone(p : Player): Boolean {
+        return p.getAdvancementProgress(Bukkit.getAdvancement(this)!!).isDone
+    }
+
 
 
 
@@ -105,13 +115,14 @@ object Util {
     }
 
     fun win(p : UUID){ //指定したプレイヤーを勝利にする
+
         val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
         intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6§l${getdata(p).name}の勝利！", mutableListOf(Component.text("§e${getdata(p).name}の合計：${countcard(p)}"),
             Component.text("§e${getdata(getenemy(p)).name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {
             if (getplayer(p) != null) getplayer(p)?.openInventory(inv)
             if (getplayer(getdata(p).enemy) != null) getplayer(getdata(p).enemy)?.openInventory(inv)
-
+            if (getplayer(p)?.let { LoginServer.key.isDone(it) } == true && !getdata(p).customsetting) getplayer(p)?.awardAdvancement(Complete21.key)
         })
         Thread.sleep(5000)
         return

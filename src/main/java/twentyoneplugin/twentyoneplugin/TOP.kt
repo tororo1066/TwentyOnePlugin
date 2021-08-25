@@ -1,5 +1,6 @@
 package twentyoneplugin.twentyoneplugin
 
+import advancement.AdvancementManager
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
@@ -9,15 +10,19 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
+import twentyoneplugin.twentyoneplugin.AdvancementUtils.Companion.awardAdvancement
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.hokancmd
+import twentyoneplugin.twentyoneplugin.Util.isDone
 import twentyoneplugin.twentyoneplugin.Util.runcmd
 import twentyoneplugin.twentyoneplugin.Util.sendmsg
+import twentyoneplugin.twentyoneplugin.advancements.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
 
 
 class PlayerData{
@@ -39,6 +44,8 @@ class PlayerData{
     var clocktime = plugin.config.getInt("clocktime")
     var settipcoin = plugin.config.getInt("tipcoin")
 
+    var customsetting = false
+
     fun tipset(tipdouble : Double){
         tip = tipdouble
     }
@@ -58,6 +65,7 @@ class PlayerData{
         clocktime = ct
         tipcoin = tc
         settipcoin = tc
+        customsetting = true
     }
 }
 
@@ -70,7 +78,9 @@ class TOP : JavaPlugin() {
     override fun onEnable() {
         saveDefaultConfig()
         getCommand("21")?.setExecutor(this)
+        plugin = this
         server.pluginManager.registerEvents(EventListener,this)
+        server.pluginManager.registerEvents(AdvancementUtils(),this)
         vault = VaultManager(this)
         val mysql = MySQLManager(this,"21firstload")
         if (!mysql.connected){
@@ -78,13 +88,24 @@ class TOP : JavaPlugin() {
             logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
             mode = false
         }else{
-            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyoneDB` (\n" +
+            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyone_log` (\n" +
                     "\t`startplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`joinplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`tip` DOUBLE NULL DEFAULT NULL,\n" +
                     "\t`firstcoin` INT(10) NULL DEFAULT NULL,\n" +
                     "\t`startlastcoin` INT(10) NULL DEFAULT NULL,\n" +
                     "\t`joinlastcoin` INT(10) NULL DEFAULT NULL\n" +
+                    ")\n" +
+                    "COLLATE='utf8mb4_0900_ai_ci'\n" +
+                    "ENGINE=InnoDB\n" +
+                    ";\n")
+
+            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyone_battle_log` (\n" +
+                    "\t`uuid` VARCHAR(36) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`mcid` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
+                    "\t`win` INT(10) NULL DEFAULT NULL,\n" +
+                    "\t`draw` INT(10) NULL DEFAULT NULL,\n" +
+                    "\t`lose` INT(10) NULL DEFAULT NULL\n" +
                     ")\n" +
                     "COLLATE='utf8mb4_0900_ai_ci'\n" +
                     "ENGINE=InnoDB\n" +
@@ -99,7 +120,6 @@ class TOP : JavaPlugin() {
             }
         }
 
-        plugin = this
         var int = 1
         while (config.isSet("sp.$int")){
             if (config.getBoolean("sp.$int.enable")){
@@ -114,6 +134,8 @@ class TOP : JavaPlugin() {
         cardmaterial = config.getString("cardmaterial")?.let { Material.valueOf(it) }!!
         spcardmaterial = Material.valueOf(config.getString("spcardmaterial")!!)
         invisiblecardcsm = config.getInt("invisiblecardcsm")
+
+        AdvancementUtils().loadAdvancements()
     }
 
     companion object{
@@ -175,41 +197,38 @@ class TOP : JavaPlugin() {
                                 "§b部屋設定 1チップ当たりの金額:${money}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
+                    return true
+                }
+                if (args.size == 2){
 
-                }else{
-                    if (args.size == 2){
+                    val money = args[1].toDoubleOrNull()?:return true
 
-                        val money = args[1].toDoubleOrNull()?:return true
-
-                        if (datamap.containsKey(sender.uniqueId)) {
-                            sender.sendmsg("§4ゲームに参加中です")
-                            return true
-                        }
-                        if (money * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
-                            sender.sendmsg("§4金額が足りません\n必要金額：${money * plugin.config.getInt("tipcoin")}")
-                            return true
-                        }
-                        vault.withdraw(sender.uniqueId, money * plugin.config.getInt("tipcoin"))
-                        datamap[sender.uniqueId] = PlayerData()
-                        canjoin.add(sender.uniqueId)
-                        datamap[sender.uniqueId]?.tipset(money)
-
-
-                        Bukkit.broadcast(
-                            runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                                    "§f/21 join ${sender.name} §4最低必須金額 ${
-                                        getdata(sender.uniqueId).tip * plugin.config.getInt(
-                                            "tipcoin"
-                                        )
-                                    }\n" +
-                                    "§b部屋設定 1チップ当たりの金額:${getdata(sender.uniqueId).tip}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
-                        )
-                        TwentyOne(sender.uniqueId).start()
-                    }else{
-                        sender.sendmsg("§/21 start [1枚当たりの掛け金]")
+                    if (datamap.containsKey(sender.uniqueId)) {
+                        sender.sendmsg("§4ゲームに参加中です")
                         return true
                     }
+                    if (money * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
+                        sender.sendmsg("§4金額が足りません\n必要金額：${money * plugin.config.getInt("tipcoin")}")
+                        return true
+                    }
+                    vault.withdraw(sender.uniqueId, money * plugin.config.getInt("tipcoin"))
+                    datamap[sender.uniqueId] = PlayerData()
+                    canjoin.add(sender.uniqueId)
+                    datamap[sender.uniqueId]?.tipset(money)
+
+                    Bukkit.broadcast(
+                        runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
+                                "§f/21 join ${sender.name} §4最低必須金額 ${
+                                    getdata(sender.uniqueId).tip * plugin.config.getInt(
+                                        "tipcoin"
+                                    )
+                                }\n" +
+                                "§b部屋設定 1チップ当たりの金額:${getdata(sender.uniqueId).tip}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                    )
+                    TwentyOne(sender.uniqueId).start()
                 }
+
+
 
             }
 
@@ -245,9 +264,9 @@ class TOP : JavaPlugin() {
                 datamap[p.uniqueId]?.nameset(p,sender)
                 datamap[p.uniqueId]?.dataset(p, sender)
                 datamap[sender.uniqueId]?.dataset(sender, p)
-                sender.gameMode = GameMode.SURVIVAL
-                p.gameMode = GameMode.SURVIVAL
 
+                if (LoginServer.key.isDone(p)) p.awardAdvancement(JoinGame.key)
+                if (LoginServer.key.isDone(sender)) sender.awardAdvancement(JoinGame.key)
                 return true
             }
 
@@ -264,6 +283,42 @@ class TOP : JavaPlugin() {
                 return true
             }
 
+            "log"->{
+                Thread{
+                    val mysql = MySQLManager(this,"21GetLog")
+                    val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${sender.uniqueId}';")
+                    if (rs == null || !rs.next()){
+                        sender.sendmsg("§4あなたはまだ一度も試合をしていません")
+                        rs?.close()
+                        mysql.close()
+                        return@Thread
+                    }
+                    val win = rs.getInt("win")
+                    val draw = rs.getInt("draw")
+                    val lose = rs.getInt("lose")
+                    val winper = floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+                    if (win + draw + lose >= 10){
+                        if (JoinGame.key.isDone(sender)) sender.awardAdvancement(Addict.key)
+                    }
+                    if (win + draw + lose >= 100){
+                        if (Addict.key.isDone(sender)) sender.awardAdvancement(HundredBattles.key)
+                        if (winper >= 70.0){
+                            if (HundredBattles.key.isDone(sender)) sender.awardAdvancement(ProGamer.key)
+                        }
+                    }
+
+                    sender.sendMessage("""
+                    §e§lあなたの戦績
+                    §6勝利数：$win
+                    §a引分数：$draw
+                    §c敗北数：$lose
+                    §b勝率(切捨て)：${winper}%
+                """.trimIndent())
+                    return@Thread
+                }.start()
+                return true
+            }
+
             "help" -> {
                 sender.sendMessage("§d===================TwentyOnePlugin(21)===================")
                 sender.sendMessage(hokancmd("§b/21 start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
@@ -271,6 +326,7 @@ class TOP : JavaPlugin() {
                 sender.sendMessage("§b細かいルールを指定して部屋を作成します")
                 sender.sendMessage(hokancmd("§b/21 join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
                 sender.sendMessage(runcmd("§b/21 open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
+                sender.sendMessage(runcmd("§b/21 log 戦績を表示します","/21 log","§6またはここをクリック！"))
                 if (sender.isOp || sender.hasPermission("21.switch")) {
                     sender.sendMessage(runcmd("§c/21 switch モードを切り替えます","/21 switch","§6またはここをクリック！"))
                     if (sender.isOp) {
@@ -278,7 +334,7 @@ class TOP : JavaPlugin() {
                     }
                     sender.sendMessage("§c赤はOP(21.switch)用のコマンドです")
                 }
-                sender.sendMessage("§dVersion:2.0=======TwentyOnePlugin(21)==§lAuthor:tororo_1066")
+                sender.sendMessage("§dVersion:3.0=======TwentyOnePlugin(21)==§lAuthor:tororo_1066")
                 return true
 
             }
@@ -319,7 +375,7 @@ class TOP : JavaPlugin() {
 
         if (alias == "21"){
             if (args.size == 1){
-                return mutableListOf("help","join","start","open")
+                return mutableListOf("help","join","start","open","log")
             }
             if (args.size == 2){
                 when(args[0]){
