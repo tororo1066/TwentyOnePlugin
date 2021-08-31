@@ -14,6 +14,7 @@ import twentyoneplugin.twentyoneplugin.AdvancementUtils.Companion.awardAdvanceme
 import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
+import twentyoneplugin.twentyoneplugin.Util.format
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.hokancmd
 import twentyoneplugin.twentyoneplugin.Util.isDone
@@ -165,13 +166,18 @@ class TOP : JavaPlugin() {
             "start" -> {
                 if (args.size == 6) {
 
+                    if (!args[1].matches(Regex("-?\\d+"))){
+                        sender.sendmsg("掛け金が不正です")
+                        return true
+                    }
+
                     val money = args[1].toDoubleOrNull()?:return true
                     val round = args[2].toIntOrNull()?:return true
                     val tip = args[3].toIntOrNull()?:return true
                     val bet = args[4].toIntOrNull()?:return true
                     val clocktime = args[5].toIntOrNull()?:return true
 
-                    if (round !in 1..10 || tip !in 10..30 || bet !in 1..10 || clocktime !in 10..60) {
+                    if (money % 1 > 0|| money < 0 || round !in 1..10 || tip !in 10..30 || bet !in 1..10 || clocktime !in 10..60) {
                         sender.sendmsg("/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]")
                         return true
                     }
@@ -179,6 +185,7 @@ class TOP : JavaPlugin() {
                         sender.sendmsg("§4ゲームに参加中です")
                         return true
                     }
+
                     if (money * tip > vault.getBalance(sender.uniqueId)){
                         sender.sendmsg("§4金額が足りません\n必要金額：${money * tip}")
                         return true
@@ -191,10 +198,10 @@ class TOP : JavaPlugin() {
 
                     Bukkit.broadcast(
                         runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                                "§f/21 join ${sender.name} §4最低必須金額 ${
-                                    getdata(sender.uniqueId).tip * tip
+                                "§f/21 join ${sender.name} §e最低必須金額 ${
+                                    format(getdata(sender.uniqueId).tip * tip)
                                 }\n" +
-                                "§b部屋設定 1チップ当たりの金額:${money}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                "§b部屋設定 1チップ当たりの金額:${format(money)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
                     return true
@@ -205,6 +212,10 @@ class TOP : JavaPlugin() {
 
                     if (datamap.containsKey(sender.uniqueId)) {
                         sender.sendmsg("§4ゲームに参加中です")
+                        return true
+                    }
+                    if (money % 1 > 0|| money < 0){
+                        sender.sendmsg("§4金額の指定が不正規です")
                         return true
                     }
                     if (money * plugin.config.getInt("tipcoin") > vault.getBalance(sender.uniqueId)){
@@ -218,12 +229,12 @@ class TOP : JavaPlugin() {
 
                     Bukkit.broadcast(
                         runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                                "§f/21 join ${sender.name} §4最低必須金額 ${
-                                    getdata(sender.uniqueId).tip * plugin.config.getInt(
+                                "§f/21 join ${sender.name} §e最低必須金額 ${
+                                    format(getdata(sender.uniqueId).tip * plugin.config.getInt(
                                         "tipcoin"
-                                    )
+                                    ))
                                 }\n" +
-                                "§b部屋設定 1チップ当たりの金額:${getdata(sender.uniqueId).tip}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                "§b部屋設定 1チップ当たりの金額:${format(getdata(sender.uniqueId).tip)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
                 }
@@ -279,7 +290,11 @@ class TOP : JavaPlugin() {
                     sender.sendmsg("§4ゲームに参加していません")
                     return true
                 }
-                sender.openInventory(getinv(sender.uniqueId))
+                try {
+                    sender.openInventory(getinv(sender.uniqueId))
+                }catch (e : Exception){
+                    sender.sendmsg("§4少し時間をおいて試してください")
+                }
                 return true
             }
 

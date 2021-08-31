@@ -36,6 +36,10 @@ object Util {
         getplayer(this)?.sendmsg(s)
     }
 
+    fun format(double: Double):String{
+        return String.format("%,.0f",double)
+    }
+
     fun allplayersend(p : UUID, s : String){
         getplayer(p)?.sendMessage(s)
         getplayer(getdata(p).enemy)?.sendMessage(s)

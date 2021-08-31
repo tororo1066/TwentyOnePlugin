@@ -15,6 +15,7 @@ object UltimateGame : Advancement(plugin,"ultimate_game") {
         setDisplay {
             it.setTitle("アルティメットゲーム")
             it.setDescription("相手のチップを1ターンで全て奪い取る")
+            it.setHidden(true)
             it.setIcon(spcardmaterial, "{CustomModelData:${spcards[7]}}")
             it.setFrame(FrameType.CHALLENGER)
         }

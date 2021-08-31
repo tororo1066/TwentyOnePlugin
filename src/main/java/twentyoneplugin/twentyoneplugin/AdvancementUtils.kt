@@ -15,7 +15,7 @@ class AdvancementUtils : AdvancementManager(plugin), Listener {
 
     fun loadAdvancements(){
         registerAll(LoginServer,JoinGame,UseSp,WinGame,Complete21,PerfectGame,UltimateGame,DeathGame,Addict,HundredBattles,ProGamer)
-        createAll(false)
+        createAll(true)
     }
 
     private fun registerAll(vararg advancement: Advancement){

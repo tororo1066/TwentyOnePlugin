@@ -14,6 +14,7 @@ object ProGamer : Advancement(plugin,"progamer") {
         setDisplay {
             it.setTitle("プロゲーマー")
             it.setDescription("100戦以上して勝率を70%以上にする\n真の暇人")
+            it.setHidden(true)
             it.setFrame(FrameType.CHALLENGER)
             it.setIcon(Material.PLAYER_HEAD,"{SkullOwner:MHF_Herobrine}")
         }

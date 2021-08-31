@@ -20,6 +20,7 @@ import twentyoneplugin.twentyoneplugin.Util.allplayersend
 import twentyoneplugin.twentyoneplugin.Util.allplaysound
 import twentyoneplugin.twentyoneplugin.Util.draw
 import twentyoneplugin.twentyoneplugin.Util.endtwoturn
+import twentyoneplugin.twentyoneplugin.Util.format
 import twentyoneplugin.twentyoneplugin.Util.gamelatersetting
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.getenemy
@@ -53,8 +54,8 @@ class TwentyOne(private val player : UUID) : Thread(){
                 return
             }
             if (i % 20 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
-                    "§f/21 join ${getplayer(player)?.name} §4最低必須金額 ${getdata(player).tip * getdata(player).tipcoin}\n" +
-                    "§b部屋設定 1チップ当たりの金額:${getdata(player).tip}円、Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
+                    "§f/21 join ${getplayer(player)?.name} §e最低必須金額 ${format(getdata(player).tip * getdata(player).tipcoin)}\n" +
+                    "§b部屋設定 1チップ当たりの金額:${format(getdata(player).tip)}円、Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
                 ,Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
@@ -184,15 +185,18 @@ class TwentyOne(private val player : UUID) : Thread(){
 
             if (!gamelatersetting(player,gameend)){
                 if (getdata(player).customsetting)break
+
+                val tipcoin = getdata(player).tipcoin
+
                 Bukkit.getScheduler().runTask(plugin, Runnable {
-                    if (getdata(player).tipcoin == 0){
-                        if (getplayer(getenemy(player))?.let { Complete21.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(PerfectGame.key)
+                    if (tipcoin == 0){
+                        if (getplayer(joinplayer)?.let { Complete21.key.isDone(it) } == true) getplayer(joinplayer)?.awardAdvancement(PerfectGame.key)
                     }else{
                         if (getplayer(player)?.let { Complete21.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(PerfectGame.key)
                     }
                     if (loops == 1){
-                        if (getdata(player).tipcoin == 0){
-                            if (getplayer(getenemy(player))?.let { PerfectGame.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(UltimateGame.key)
+                        if (tipcoin == 0){
+                            if (getplayer(joinplayer)?.let { PerfectGame.key.isDone(it) } == true) getplayer(joinplayer)?.awardAdvancement(UltimateGame.key)
                         }else{
                             if (getplayer(player)?.let { PerfectGame.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(UltimateGame.key)
                         }
@@ -231,11 +235,6 @@ class TwentyOne(private val player : UUID) : Thread(){
         }
 
 
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            if (getplayer(player) != null) getplayer(player)?.closeInventory()
-            if (getplayer(getenemy(player)) != null) getplayer(getenemy(player))?.closeInventory()
-            return@Runnable
-        })
 
         val tipcoin = getdata(player).tipcoin
         val enemytipcoin = getdata(getenemy(player)).tipcoin
@@ -252,7 +251,7 @@ class TwentyOne(private val player : UUID) : Thread(){
                 if (tipcoin > enemytipcoin){
                     if (getplayer(player)?.let { UseSp.key.isDone(it) } == true) getplayer(player)?.awardAdvancement(WinGame.key)
                 }else{
-                    if (getplayer(getenemy(player))?.let { UseSp.key.isDone(it) } == true) getplayer(getenemy(player))?.awardAdvancement(WinGame.key)
+                    if (getplayer(joinplayer)?.let { UseSp.key.isDone(it) } == true) getplayer(joinplayer)?.awardAdvancement(WinGame.key)
                 }
             }
         })
@@ -277,6 +276,8 @@ class TwentyOne(private val player : UUID) : Thread(){
         }
 
         mysql.execute("INSERT INTO twentyone_log VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        rs?.close()
+        rs2?.close()
         mysql.close()
 
         datamap.remove(getenemy(player))
