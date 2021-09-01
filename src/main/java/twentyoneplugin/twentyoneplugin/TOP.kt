@@ -7,6 +7,7 @@ import org.bukkit.Material
 import org.bukkit.Server
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
+import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import org.bukkit.plugin.java.JavaPlugin
@@ -153,17 +154,18 @@ class TOP : JavaPlugin() {
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        if (sender !is Player) return true
-        if (!mode && !sender.isOp && !sender.hasPermission("21.switch")) {
+
+        if (sender is Player && !mode && !sender.isOp && !sender.hasPermission("21.switch")) {
             sender.sendmsg("§421は現在停止中です")
             return true
         }
         if (args.isEmpty()) {
-            sender.sendmsg("§b/21 helpでコマンドを確認しよう！")
+            sender.sendMessage(prefix + "§b/21 helpでコマンドを確認しよう！")
             return true
         }
         when (args[0]) {
             "start" -> {
+                if (sender !is Player) return true
                 if (args.size == 6) {
 
                     if (!args[1].matches(Regex("-?\\d+"))){
@@ -244,6 +246,7 @@ class TOP : JavaPlugin() {
             }
 
             "join" -> {
+                if (sender !is Player) return true
                 if (args.size != 2) {
                     sender.sendmsg("/21 join [プレイヤーの名前]")
                     return true
@@ -282,6 +285,7 @@ class TOP : JavaPlugin() {
             }
 
             "open" -> {
+                if (sender !is Player) return true
                 if (args.size != 1) {
                     sender.sendmsg("§4引数が不正です")
                     return true
@@ -299,38 +303,78 @@ class TOP : JavaPlugin() {
             }
 
             "log"->{
-                Thread{
-                    val mysql = MySQLManager(this,"21GetLog")
-                    val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${sender.uniqueId}';")
-                    if (rs == null || !rs.next()){
-                        sender.sendmsg("§4あなたはまだ一度も試合をしていません")
-                        rs?.close()
+                if (args.size == 2 && sender is ConsoleCommandSender){
+                    val p = Bukkit.getOfflinePlayer(args[1])
+                    Thread {
+                        val mysql = MySQLManager(this, "21GetLog")
+                        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${p.uniqueId}';")
+                        if (rs == null || !rs.next()) {
+                            sender.sendMessage("§4${p.name}はまだ一度も試合をしていません")
+                            rs?.close()
+                            mysql.close()
+                            return@Thread
+                        }
+                        val win = rs.getInt("win")
+                        val draw = rs.getInt("draw")
+                        val lose = rs.getInt("lose")
+                        val winper =
+                            floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+
+                        sender.sendMessage(
+                            """
+                    §e§l${p.name}の戦績
+                    §6勝利数：$win
+                    §a引分数：$draw
+                    §c敗北数：$lose
+                    §b勝率(切捨て)：${winper}%
+                """.trimIndent()
+                        )
+                        rs.close()
                         mysql.close()
                         return@Thread
-                    }
-                    val win = rs.getInt("win")
-                    val draw = rs.getInt("draw")
-                    val lose = rs.getInt("lose")
-                    val winper = floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
-                    if (win + draw + lose >= 10){
-                        if (JoinGame.key.isDone(sender)) sender.awardAdvancement(Addict.key)
-                    }
-                    if (win + draw + lose >= 100){
-                        if (Addict.key.isDone(sender)) sender.awardAdvancement(HundredBattles.key)
-                        if (winper >= 70.0){
-                            if (HundredBattles.key.isDone(sender)) sender.awardAdvancement(ProGamer.key)
+                    }.start()
+                }else {
+                    if (sender !is Player) return true
+                    Thread {
+                        val mysql = MySQLManager(this, "21GetLog")
+                        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${sender.uniqueId}';")
+                        if (rs == null || !rs.next()) {
+                            sender.sendmsg("§4あなたはまだ一度も試合をしていません")
+                            rs?.close()
+                            mysql.close()
+                            return@Thread
                         }
-                    }
+                        val win = rs.getInt("win")
+                        val draw = rs.getInt("draw")
+                        val lose = rs.getInt("lose")
+                        val winper =
+                            floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+                        Bukkit.getScheduler().runTask(this, Runnable {
+                            if (win + draw + lose >= 10) {
+                                if (JoinGame.key.isDone(sender)) sender.awardAdvancement(Addict.key)
+                            }
+                            if (win + draw + lose >= 100) {
+                                if (Addict.key.isDone(sender)) sender.awardAdvancement(HundredBattles.key)
+                                if (winper >= 70.0) {
+                                    if (HundredBattles.key.isDone(sender)) sender.awardAdvancement(ProGamer.key)
+                                }
+                            }
+                        })
 
-                    sender.sendMessage("""
+                        sender.sendMessage(
+                            """
                     §e§lあなたの戦績
                     §6勝利数：$win
                     §a引分数：$draw
                     §c敗北数：$lose
                     §b勝率(切捨て)：${winper}%
-                """.trimIndent())
-                    return@Thread
-                }.start()
+                """.trimIndent()
+                        )
+                        rs.close()
+                        mysql.close()
+                        return@Thread
+                    }.start()
+                }
                 return true
             }
 
@@ -355,6 +399,7 @@ class TOP : JavaPlugin() {
             }
 
             "switch" -> {
+                if (sender !is Player) return true
                 if (!sender.isOp && !sender.hasPermission("21.switch")) {
                     sender.sendmsg("§4あなたはこのコマンドを実行する権限がありません")
                     return true
@@ -368,6 +413,7 @@ class TOP : JavaPlugin() {
             }
 
             "switchsavemode" -> {
+                if (sender !is Player) return true
                 if (!sender.isOp) {
                     sender.sendmsg("§4あなたはこのコマンドを実行する権限がありません")
                     return true

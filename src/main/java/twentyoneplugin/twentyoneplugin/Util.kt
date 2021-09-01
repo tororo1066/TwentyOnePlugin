@@ -126,7 +126,7 @@ object Util {
         Bukkit.getScheduler().runTask(plugin, Runnable {
             if (getplayer(p) != null) getplayer(p)?.openInventory(inv)
             if (getplayer(getdata(p).enemy) != null) getplayer(getdata(p).enemy)?.openInventory(inv)
-            if (getplayer(p)?.let { LoginServer.key.isDone(it) } == true && !getdata(p).customsetting) getplayer(p)?.awardAdvancement(Complete21.key)
+            if (getplayer(p)?.let { LoginServer.key.isDone(it) } == true && !getdata(p).customsetting && countcard(p) == getdata(p).bjnumber) getplayer(p)?.awardAdvancement(Complete21.key)
         })
         Thread.sleep(5000)
         return
