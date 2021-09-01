@@ -700,20 +700,13 @@ object Inventory {
         getdata(p).action = "spuse"
         if (getdata(p).harvest) getinv(p).setItem(checkplayersp(p), drawspcard(p))
 
-        if (getplayer(p) != null) getplayer(p)?.closeInventory()
-        if (getplayer(getenemy(p)) != null) getplayer(getenemy(p))?.closeInventory()
-
         allplaysound(Sound.ITEM_TOTEM_USE,p)
 
         allplayersend(p,item.itemMeta.displayName)
         for (l in item.lore!!){
             allplayersend(p,l)
         }
-        
-        Thread.sleep(2000)
 
-        getplayer(p)?.openInventory(getinv(p))
-        getplayer(getdata(p).enemy)?.openInventory(getinv(getdata(p).enemy))
 
         val inv = getinv(p)
         when(getnbt(item,"sp")){
