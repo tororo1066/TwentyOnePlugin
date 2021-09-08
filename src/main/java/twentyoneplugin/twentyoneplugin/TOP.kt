@@ -79,18 +79,18 @@ class TOP : JavaPlugin() {
 
     override fun onEnable() {
         saveDefaultConfig()
-        getCommand("21")?.setExecutor(this)
+        getCommand("bjp")?.setExecutor(this)
         plugin = this
         server.pluginManager.registerEvents(EventListener,this)
         server.pluginManager.registerEvents(AdvancementUtils(),this)
         vault = VaultManager(this)
-        val mysql = MySQLManager(this,"21firstload")
+        val mysql = MySQLManager(this,"bjpfirstload")
         if (!mysql.connected){
             logger.warning("データベースへの接続に失敗しました")
             logger.warning("それによりmodeをoffにしました(鯖内で変えることが可能です)")
             mode = false
         }else{
-            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyone_log` (\n" +
+            mysql.execute("CREATE TABLE IF NOT EXISTS `bjp_log` (\n" +
                     "\t`startplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`joinplayer` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`tip` DOUBLE NULL DEFAULT NULL,\n" +
@@ -102,7 +102,7 @@ class TOP : JavaPlugin() {
                     "ENGINE=InnoDB\n" +
                     ";\n")
 
-            mysql.execute("CREATE TABLE IF NOT EXISTS `twentyone_battle_log` (\n" +
+            mysql.execute("CREATE TABLE IF NOT EXISTS `bjp_log` (\n" +
                     "\t`uuid` VARCHAR(36) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`mcid` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`win` INT(10) NULL DEFAULT NULL,\n" +
@@ -142,7 +142,7 @@ class TOP : JavaPlugin() {
 
     companion object{
         lateinit var vault : VaultManager
-        const val prefix = "§5§l[21]§r"
+        const val prefix = "§5§l[BJ§a§lP]§r"
         val datamap = ConcurrentHashMap<UUID,PlayerData>()
         val spcards = ConcurrentHashMap<Int,Int>()
         val cardcsm = ArrayList<Int>()
@@ -160,18 +160,18 @@ class TOP : JavaPlugin() {
             return true
         }
         if (args.isEmpty()) {
-            sender.sendMessage(prefix + "§b/21 helpでコマンドを確認しよう！")
+            sender.sendMessage("$prefix§b/bjp helpでコマンドを確認しよう！")
             return true
         }
         when (args[0]) {
+            "test"->{
+                if (!sender.isOp)return true
+                datamap.clear()
+                canjoin.clear()
+            }
             "start" -> {
                 if (sender !is Player) return true
                 if (args.size == 6) {
-
-                    if (!args[1].matches(Regex("-?\\d+"))){
-                        sender.sendmsg("掛け金が不正です")
-                        return true
-                    }
 
                     val money = args[1].toDoubleOrNull()?:return true
                     val round = args[2].toIntOrNull()?:return true
@@ -180,7 +180,7 @@ class TOP : JavaPlugin() {
                     val clocktime = args[5].toIntOrNull()?:return true
 
                     if (money % 1 > 0|| money < 0 || round !in 1..10 || tip !in 10..30 || bet !in 1..10 || clocktime !in 10..60) {
-                        sender.sendmsg("/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]")
+                        sender.sendmsg("/bjp start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]")
                         return true
                     }
                     if (datamap.containsKey(sender.uniqueId)) {
@@ -199,11 +199,11 @@ class TOP : JavaPlugin() {
                     datamap[sender.uniqueId]?.gamedataset(round,bet,clocktime,tip)
 
                     Bukkit.broadcast(
-                        runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                                "§f/21 join ${sender.name} §e最低必須金額 ${
+                        runcmd("§l${sender.name}§aが§5§lBJP§aを募集中...残り60秒\n" +
+                                "§f/bjp join ${sender.name} §e最低必須金額 ${
                                     format(getdata(sender.uniqueId).tip * tip)
                                 }\n" +
-                                "§b部屋設定 1チップ当たりの金額:${format(money)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                "§b部屋設定 1チップ当たりの金額:${format(money)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/bjp join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
                     return true
@@ -230,13 +230,13 @@ class TOP : JavaPlugin() {
                     datamap[sender.uniqueId]?.tipset(money)
 
                     Bukkit.broadcast(
-                        runcmd("§l${sender.name}§aが§5§l21§aを募集中...残り60秒\n" +
-                                "§f/21 join ${sender.name} §e最低必須金額 ${
+                        runcmd("§l${sender.name}§aが§5§lBJP§aを募集中...残り60秒\n" +
+                                "§f/bjp join ${sender.name} §e最低必須金額 ${
                                     format(getdata(sender.uniqueId).tip * plugin.config.getInt(
                                         "tipcoin"
                                     ))
                                 }\n" +
-                                "§b部屋設定 1チップ当たりの金額:${format(getdata(sender.uniqueId).tip)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/21 join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
+                                "§b部屋設定 1チップ当たりの金額:${format(getdata(sender.uniqueId).tip)}円、Round数:${datamap[sender.uniqueId]?.round}、初期チップ数:${datamap[sender.uniqueId]?.settipcoin}枚、初期ベット数:${datamap[sender.uniqueId]?.firstbet}枚、1ターンの時間:${datamap[sender.uniqueId]?.clocktime}秒","/bjp join ${sender.name}", "§6またはここをクリック！"), Server.BROADCAST_CHANNEL_USERS
                     )
                     TwentyOne(sender.uniqueId).start()
                 }
@@ -248,7 +248,7 @@ class TOP : JavaPlugin() {
             "join" -> {
                 if (sender !is Player) return true
                 if (args.size != 2) {
-                    sender.sendmsg("/21 join [プレイヤーの名前]")
+                    sender.sendmsg("/bjp join [プレイヤーの名前]")
                     return true
                 }
                 if (datamap.containsKey(sender.uniqueId)) {
@@ -279,6 +279,9 @@ class TOP : JavaPlugin() {
                 datamap[p.uniqueId]?.dataset(p, sender)
                 datamap[sender.uniqueId]?.dataset(sender, p)
 
+                sender.openInventory(getinv(sender.uniqueId))
+                p.openInventory(getinv(p.uniqueId))
+
                 if (LoginServer.key.isDone(p)) p.awardAdvancement(JoinGame.key)
                 if (LoginServer.key.isDone(sender)) sender.awardAdvancement(JoinGame.key)
                 return true
@@ -302,12 +305,16 @@ class TOP : JavaPlugin() {
                 return true
             }
 
+            "tiplog"->{
+
+            }
+
             "log"->{
-                if (args.size == 2 && sender is ConsoleCommandSender){
+                if (args.size == 2 && sender is ConsoleCommandSender || sender.isOp){
                     val p = Bukkit.getOfflinePlayer(args[1])
                     Thread {
-                        val mysql = MySQLManager(this, "21GetLog")
-                        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${p.uniqueId}';")
+                        val mysql = MySQLManager(this, "bjpGetLog")
+                        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${p.uniqueId}';")
                         if (rs == null || !rs.next()) {
                             sender.sendMessage("§4${p.name}はまだ一度も試合をしていません")
                             rs?.close()
@@ -336,8 +343,8 @@ class TOP : JavaPlugin() {
                 }else {
                     if (sender !is Player) return true
                     Thread {
-                        val mysql = MySQLManager(this, "21GetLog")
-                        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${sender.uniqueId}';")
+                        val mysql = MySQLManager(this, "bjpGetLog")
+                        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${sender.uniqueId}';")
                         if (rs == null || !rs.next()) {
                             sender.sendmsg("§4あなたはまだ一度も試合をしていません")
                             rs?.close()
@@ -379,28 +386,28 @@ class TOP : JavaPlugin() {
             }
 
             "help" -> {
-                sender.sendMessage("§d===================TwentyOnePlugin(21)===================")
-                sender.sendMessage(hokancmd("§b/21 start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
-                sender.sendMessage(hokancmd("§b/21 start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage("§d===================BlackJackPlus(bjp)===================")
+                sender.sendMessage(hokancmd("§b/bjp start [賭け数] 指定した賭け数で21を募集します","/21 start ","§6またはここをクリック！"))
+                sender.sendMessage(hokancmd("§b/bjp start [1枚当たりの掛け金] [Round数(1~10)] [初期チップ数(10~30)] [初期ベット数(1~10)] [1ターンの時間(10~60)]","/21 start ","§6またはここをクリック！"))
                 sender.sendMessage("§b細かいルールを指定して部屋を作成します")
-                sender.sendMessage(hokancmd("§b/21 join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
-                sender.sendMessage(runcmd("§b/21 open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
-                sender.sendMessage(runcmd("§b/21 log 戦績を表示します","/21 log","§6またはここをクリック！"))
-                if (sender.isOp || sender.hasPermission("21.switch")) {
-                    sender.sendMessage(runcmd("§c/21 switch モードを切り替えます","/21 switch","§6またはここをクリック！"))
+                sender.sendMessage(hokancmd("§b/bjp join [name] 指定したプレイヤーの部屋に入ります","/21 join ", "§6またはここをクリック！"))
+                sender.sendMessage(runcmd("§b/bjp open ゲーム中だった場合そこのインベントリを開きます","/21 open","§6またはここをクリック！"))
+                sender.sendMessage(runcmd("§b/bjp log 戦績を表示します","/21 log","§6またはここをクリック！"))
+                if (sender.isOp || sender.hasPermission("bjp.switch")) {
+                    sender.sendMessage(runcmd("§c/bjp switch モードを切り替えます","/21 switch","§6またはここをクリック！"))
                     if (sender.isOp) {
-                        sender.sendMessage(runcmd("§c/21 switchsavemode モード変更を鯖再起後も保持するかどうかを切り替えます","/21 switchsavemode","§6またはここをクリック！"))
+                        sender.sendMessage(runcmd("§c/bjp switchsavemode モード変更を鯖再起後も保持するかどうかを切り替えます","/21 switchsavemode","§6またはここをクリック！"))
                     }
-                    sender.sendMessage("§c赤はOP(21.switch)用のコマンドです")
+                    sender.sendMessage("§c赤はOP(bjp.switch)用のコマンドです")
                 }
-                sender.sendMessage("§dVersion:3.0=======TwentyOnePlugin(21)==§lAuthor:tororo_1066")
+                sender.sendMessage("§dVersion:3.0=======BlackJackPlus(bjp)==§lAuthor:tororo_1066")
                 return true
 
             }
 
             "switch" -> {
                 if (sender !is Player) return true
-                if (!sender.isOp && !sender.hasPermission("21.switch")) {
+                if (!sender.isOp && !sender.hasPermission("bjp.switch")) {
                     sender.sendmsg("§4あなたはこのコマンドを実行する権限がありません")
                     return true
                 }
@@ -434,7 +441,7 @@ class TOP : JavaPlugin() {
         args: Array<out String>
     ): MutableList<String> {
 
-        if (alias == "21"){
+        if (alias == "bjp"){
             if (args.size == 1){
                 return mutableListOf("help","join","start","open","log")
             }

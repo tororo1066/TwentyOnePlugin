@@ -120,7 +120,7 @@ object Util {
 
     fun win(p : UUID){ //指定したプレイヤーを勝利にする
 
-        val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
+        val inv = Bukkit.createInventory(null,54, Component.text("BJPResult"))
         intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§6§l${getdata(p).name}の勝利！", mutableListOf(Component.text("§e${getdata(p).name}の合計：${countcard(p)}"),
             Component.text("§e${getdata(getenemy(p)).name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {
@@ -133,7 +133,7 @@ object Util {
     }
 
     fun draw(p: UUID){
-        val inv = Bukkit.createInventory(null,54, Component.text("21Result"))
+        val inv = Bukkit.createInventory(null,54, Component.text("BJPResult"))
         intrangeitem(inv, createitem(Material.BLACK_STAINED_GLASS_PANE,"§l引き分け", mutableListOf(Component.text("§e${getdata(p).name}の合計：${countcard(p)}"),
             Component.text("§e${getdata(getenemy(p)).name}の合計：${countcard(getdata(p).enemy)}"))),0..53)
         Bukkit.getScheduler().runTask(plugin, Runnable {

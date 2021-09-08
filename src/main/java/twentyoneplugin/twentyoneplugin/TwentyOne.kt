@@ -47,15 +47,15 @@ class TwentyOne(private val player : UUID) : Thread(){
                 return
             }
             if (i == 0){
-                Bukkit.broadcast(Component.text("§l${getplayer(player)?.name}§aの§521§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
+                Bukkit.broadcast(Component.text("§l${getplayer(player)?.name}§aの§5BJP§aは人が集まらなかったので中止しました"), Server.BROADCAST_CHANNEL_USERS)
                 vault.deposit(player,getdata(player).tip * getdata(player).tipcoin)
                 datamap.remove(player)
                 canjoin.remove(player)
                 return
             }
-            if (i % 20 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§l21§aを募集中...残り${i}秒\n" +
-                    "§f/21 join ${getplayer(player)?.name} §e最低必須金額 ${format(getdata(player).tip * getdata(player).tipcoin)}\n" +
-                    "§b部屋設定 1チップ当たりの金額:${format(getdata(player).tip)}円、Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/21 join ${getplayer(player)?.name}","§6またはここをクリック！")
+            if (i % 20 == 0) Bukkit.broadcast(runcmd("§l${getplayer(player)?.name}§aが§5§lBJP§aを募集中...残り${i}秒\n" +
+                    "§f/bjp join ${getplayer(player)?.name} §e最低必須金額 ${format(getdata(player).tip * getdata(player).tipcoin)}\n" +
+                    "§b部屋設定 1チップ当たりの金額:${format(getdata(player).tip)}円、Round数:${datamap[player]?.round}、初期チップ数:${datamap[player]?.settipcoin}枚、初期ベット数:${datamap[player]?.firstbet}枚、1ターンの時間:${datamap[player]?.clocktime}秒","/bjp join ${getplayer(player)?.name}","§6またはここをクリック！")
                 ,Server.BROADCAST_CHANNEL_USERS)
             sleep(1000)
         }
@@ -69,13 +69,17 @@ class TwentyOne(private val player : UUID) : Thread(){
 
             val startinv = getinv(startplayer)
             val joininv = getinv(joinplayer)
-            Bukkit.getScheduler().runTask(plugin, Runnable {
-                getplayer(player)?.openInventory(startinv)
-                getplayer(getdata(player).enemy)?.openInventory(joininv)
-            })
+
+
             if (loops == 1){
                 startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
                 joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(joinplayer))
+            }else{
+                Bukkit.getScheduler().runTask(plugin, Runnable {
+                    getplayer(joinplayer)?.openInventory(getinv(joinplayer))
+                    getplayer(startplayer)?.openInventory(getinv(startplayer))
+                    return@Runnable
+                })
             }
             startinv.setItem(checkplayersp(startplayer), Inventory.drawspcard(player))
             joininv.setItem(checkplayersp(joinplayer), Inventory.drawspcard(joinplayer))
@@ -261,21 +265,21 @@ class TwentyOne(private val player : UUID) : Thread(){
 
         val mysql = MySQLManager(plugin,"save21log")
 
-        val rs = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${player}';")
+        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${player}';")
         if (rs == null || !rs.next()){
-            mysql.execute("INSERT INTO twentyone_battle_log VALUES ('${player}', '${getdata(player).name}', ${if (tipcoin > enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin < enemytipcoin) 1 else 0});")
+            mysql.execute("INSERT INTO bjp_battle_log VALUES ('${player}', '${getdata(player).name}', ${if (tipcoin > enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin < enemytipcoin) 1 else 0});")
         }else{
-            mysql.execute("UPDATE twentyone_battle_log SET ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${player}';")
+            mysql.execute("UPDATE bjp_battle_log SET ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin > enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${player}';")
         }
 
-        val rs2 = mysql.query("SELECT * FROM twentyone_battle_log WHERE uuid = '${getenemy(player)}';")
+        val rs2 = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${getenemy(player)}';")
         if (rs2 == null || !rs2.next()){
-            mysql.execute("INSERT INTO twentyone_battle_log VALUES ('${getenemy(player)}', '${getdata(getenemy(player)).name}', ${if (tipcoin > enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin < enemytipcoin) 1 else 0});")
+            mysql.execute("INSERT INTO bjp_battle_log VALUES ('${getenemy(player)}', '${getdata(getenemy(player)).name}', ${if (tipcoin < enemytipcoin) 1 else 0}, ${if (tipcoin == enemytipcoin) 1 else 0}, ${if (tipcoin > enemytipcoin) 1 else 0});")
         }else{
-            mysql.execute("UPDATE twentyone_battle_log SET ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${getenemy(player)}';")
+            mysql.execute("UPDATE bjp_battle_log SET ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} = ${if (tipcoin < enemytipcoin) "win" else if (tipcoin == enemytipcoin) "draw" else "lose"} + 1 WHERE uuid = '${getenemy(player)}';")
         }
 
-        mysql.execute("INSERT INTO twentyone_log VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
+        mysql.execute("INSERT INTO bjp_log VALUES " + "('${getdata(player).name}', '${getdata(getenemy(player)).name}', ${getdata(player).tip}, ${getdata(player).settipcoin}, ${getdata(player).tipcoin}, ${getdata(getdata(player).enemy).tipcoin});")
         rs?.close()
         rs2?.close()
         mysql.close()

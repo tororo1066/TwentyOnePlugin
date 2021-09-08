@@ -22,8 +22,8 @@ object EventListener : Listener {
 
     @EventHandler
     fun invclick(e : InventoryClickEvent){
-        if (e.view.title.contains("21Result"))e.isCancelled = true
-        if (!e.view.title.contains("21table"))return
+        if (e.view.title.contains("BJPResult"))e.isCancelled = true
+        if (!e.view.title.contains("BJPtable"))return
         e.isCancelled = true
         if (e.currentItem == null)return
         val p = e.whoClicked as Player

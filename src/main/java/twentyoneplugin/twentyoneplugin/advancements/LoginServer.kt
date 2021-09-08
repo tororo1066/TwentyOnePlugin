@@ -15,7 +15,7 @@ object LoginServer : Advancement(plugin,"login_server") {
     init {
         addCriteria("login",TriggerType.IMPOSSIBLE){}
         setDisplay {
-            it.setTitle("21")
+            it.setTitle("BJP")
             it.setDescription("命を賭けるカードゲーム")
             it.setAnnounce(false)
             it.setIcon(cardmaterial,"{CustomModelData:$invisiblecardcsm}")

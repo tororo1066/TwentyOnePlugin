@@ -1,4 +1,4 @@
-name: TwentyOnePlugin
+name: BlackJackPlus
 version: 3.0
 main: twentyoneplugin.twentyoneplugin.TOP
 api-version: 1.17
@@ -8,8 +8,8 @@ depend:
   - Vault
 
 commands:
-  21:
+  bjp:
 
 permissions:
-  21:
-    switch:
+  bjp.switch:
+    default: op

@@ -12,7 +12,7 @@ object JoinGame : Advancement(plugin,"join_game") {
         setParent(LoginServer.key)
         setDisplay {
             it.setTitle("死のゲーム")
-            it.setDescription("21をプレイする")
+            it.setDescription("BJPをプレイする")
             it.setIcon(Material.TOTEM_OF_UNDYING)
         }
     }

@@ -38,7 +38,7 @@ object Inventory {
 
 
     fun invsetup(p : UUID, enemy : UUID): Inventory {
-        val inv = Bukkit.createInventory(null,54, Component.text("21table"))
+        val inv = Bukkit.createInventory(null,54, Component.text("BJPtable"))
         inv.setItem(8,createhead(enemy))
         inv.setItem(27,createhead(p))
         val item = ItemStack(Material.BOOKSHELF)

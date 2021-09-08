@@ -13,7 +13,7 @@ object Addict : Advancement(plugin,"addict") {
         setParent(JoinGame.key)
         setDisplay {
             it.setTitle("中毒者")
-            it.setDescription("21を10回プレイする")
+            it.setDescription("BJPを10回プレイする")
             it.setIcon(Icon(Material.PLAYER_HEAD,"{SkullOwner:MHF_Creeper}"))
         }
     }
