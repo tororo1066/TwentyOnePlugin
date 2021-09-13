@@ -22,6 +22,7 @@ import twentyoneplugin.twentyoneplugin.advancements.Complete21
 import twentyoneplugin.twentyoneplugin.advancements.LoginServer
 import twentyoneplugin.twentyoneplugin.advancements.WinGame
 import java.util.*
+import kotlin.math.floor
 
 object Util {
     private val datamap = TOP.datamap
@@ -174,6 +175,43 @@ object Util {
                 true
             }
         }
+    }
+
+    fun getLog(uuid : UUID): LogData {
+        val mysql = MySQLManager(plugin, "bjpGetLog")
+        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${uuid}';")
+        if (rs == null || !rs.next()) {
+            rs?.close()
+            mysql.close()
+            return LogData()
+        }
+        val win = rs.getInt("win")
+        val draw = rs.getInt("draw")
+        val lose = rs.getInt("lose")
+        val winper =
+            floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+
+        val logdata = LogData()
+        logdata.mcid = rs.getString("mcid")
+        logdata.uuid = uuid
+        logdata.win = win
+        logdata.draw = draw
+        logdata.lose = lose
+        logdata.winper = winper
+
+        rs.close()
+        mysql.close()
+
+        return logdata
+    }
+
+    class LogData{
+        var mcid = ""
+        lateinit var uuid : UUID
+        var win = 0
+        var draw = 0
+        var lose = 0
+        var winper = 0.0
     }
 
 

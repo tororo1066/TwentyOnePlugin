@@ -16,6 +16,7 @@ import twentyoneplugin.twentyoneplugin.Inventory.getinv
 import twentyoneplugin.twentyoneplugin.Inventory.invsetup
 import twentyoneplugin.twentyoneplugin.TOP.Companion.plugin
 import twentyoneplugin.twentyoneplugin.Util.format
+import twentyoneplugin.twentyoneplugin.Util.getLog
 import twentyoneplugin.twentyoneplugin.Util.getdata
 import twentyoneplugin.twentyoneplugin.Util.hokancmd
 import twentyoneplugin.twentyoneplugin.Util.isDone
@@ -102,7 +103,7 @@ class TOP : JavaPlugin() {
                     "ENGINE=InnoDB\n" +
                     ";\n")
 
-            mysql.execute("CREATE TABLE IF NOT EXISTS `bjp_log` (\n" +
+            mysql.execute("CREATE TABLE IF NOT EXISTS `bjp_battle_log` (\n" +
                     "\t`uuid` VARCHAR(36) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`mcid` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',\n" +
                     "\t`win` INT(10) NULL DEFAULT NULL,\n" +
@@ -261,7 +262,7 @@ class TOP : JavaPlugin() {
                     return true
                 }
                 if (!canjoin.contains(p.uniqueId)) {
-                    sender.sendmsg("§4ゲームが存在しません")
+                    sender.sendmsg("§4ゲームが存在しない、またはすでに埋まっています")
                     return true
                 }
                 if (getdata(p.uniqueId).tip * getdata(p.uniqueId).tipcoin > vault.getBalance(sender.uniqueId)){
@@ -310,52 +311,42 @@ class TOP : JavaPlugin() {
             }
 
             "log"->{
-                if (args.size == 2 && sender is ConsoleCommandSender || sender.isOp){
+                if (args.size == 2 && (sender is ConsoleCommandSender || sender.isOp)){
                     val p = Bukkit.getOfflinePlayer(args[1])
                     Thread {
-                        val mysql = MySQLManager(this, "bjpGetLog")
-                        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${p.uniqueId}';")
-                        if (rs == null || !rs.next()) {
-                            sender.sendMessage("§4${p.name}はまだ一度も試合をしていません")
-                            rs?.close()
-                            mysql.close()
-                            return@Thread
-                        }
-                        val win = rs.getInt("win")
-                        val draw = rs.getInt("draw")
-                        val lose = rs.getInt("lose")
-                        val winper =
-                            floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+                        val log = getLog(p.uniqueId)
 
                         sender.sendMessage(
                             """
                     §e§l${p.name}の戦績
-                    §6勝利数：$win
-                    §a引分数：$draw
-                    §c敗北数：$lose
-                    §b勝率(切捨て)：${winper}%
+                    §6勝利数：${log.win}
+                    §a引分数：${log.draw}
+                    §c敗北数：${log.lose}
+                    §b勝率(切捨て)：${log.winper}%
                 """.trimIndent()
                         )
-                        rs.close()
-                        mysql.close()
                         return@Thread
                     }.start()
                 }else {
                     if (sender !is Player) return true
                     Thread {
-                        val mysql = MySQLManager(this, "bjpGetLog")
-                        val rs = mysql.query("SELECT * FROM bjp_battle_log WHERE uuid = '${sender.uniqueId}';")
-                        if (rs == null || !rs.next()) {
-                            sender.sendmsg("§4あなたはまだ一度も試合をしていません")
-                            rs?.close()
-                            mysql.close()
-                            return@Thread
-                        }
-                        val win = rs.getInt("win")
-                        val draw = rs.getInt("draw")
-                        val lose = rs.getInt("lose")
-                        val winper =
-                            floor((win.toDouble() / (win.toDouble() + draw.toDouble() + lose.toDouble())) * 100)
+                        val log = getLog(sender.uniqueId)
+
+                        val win = log.win
+                        val draw = log.draw
+                        val lose = log.lose
+                        val winper = log.winper
+
+                        sender.sendMessage(
+                            """
+                    §e§l${sender.name}の戦績
+                    §6勝利数：${win}
+                    §a引分数：${draw}
+                    §c敗北数：${lose}
+                    §b勝率(切捨て)：${winper}%
+                """.trimIndent()
+                        )
+
                         Bukkit.getScheduler().runTask(this, Runnable {
                             if (win + draw + lose >= 10) {
                                 if (JoinGame.key.isDone(sender)) sender.awardAdvancement(Addict.key)
@@ -368,18 +359,6 @@ class TOP : JavaPlugin() {
                             }
                         })
 
-                        sender.sendMessage(
-                            """
-                    §e§lあなたの戦績
-                    §6勝利数：$win
-                    §a引分数：$draw
-                    §c敗北数：$lose
-                    §b勝率(切捨て)：${winper}%
-                """.trimIndent()
-                        )
-                        rs.close()
-                        mysql.close()
-                        return@Thread
                     }.start()
                 }
                 return true

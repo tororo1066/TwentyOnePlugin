@@ -30,6 +30,7 @@ import twentyoneplugin.twentyoneplugin.advancements.JoinGame
 import twentyoneplugin.twentyoneplugin.advancements.LoginServer
 import twentyoneplugin.twentyoneplugin.advancements.UseSp
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.random.Random
 import kotlin.random.nextInt
 
@@ -1211,6 +1212,30 @@ object Inventory {
         }
 
         return
+    }
+
+    fun tumeSpPutsCard(p : UUID){
+        val itemlist = ArrayList<ItemStack>()
+        for (i in 15 downTo 11){
+            if (getinv(p).getItem(i) == null)continue
+            itemlist.add(getinv(p).getItem(i)!!)
+            getinv(p).clear(i)
+        }
+
+        for (i in itemlist){
+            getinv(p).setItem(checkplayerspput(p),i)
+        }
+
+        itemlist.clear()
+        for (i in 20..24){
+            if (getinv(p).getItem(i) == null)continue
+            itemlist.add(getinv(p).getItem(i)!!)
+            getinv(p).clear(i)
+        }
+
+        for (i in itemlist){
+            getinv(p).setItem(checkenemyspput(p),i)
+        }
     }
 
 }
